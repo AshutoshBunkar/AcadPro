@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AcadeX — Modern Academic Platform</title>
+    <meta name="description" content="AcadeX is a modern, high-performance academic lecture library, course management, and learning platform." />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              jet: "#08090D",
+              charcoal: "#11141B",
+              graphite: "#191E28",
+              pearl: "#F5F3EF",
+              "muted-silver": "#A4ADBA",
+              siren: "#75D7FF",
+              "deep-siren": "#258BC4",
+              "neon-pink": "#FF3D9A",
+              "border-graphite": "#292F3B",
+              // Semantic colors
+              success: "#10B981",
+              warning: "#F59E0B",
+              danger: "#F43F5E",
+              // Legacy alias mappings for backward compatibility
+              surface: "#11141B",
+              background: "#08090D",
+              primary: "#75D7FF",
+              secondary: "#FF3D9A",
+              "on-surface": "#F5F3EF",
+              "on-surface-variant": "#A4ADBA",
+            },
+            fontFamily: {
+              sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
+              display: ["Plus Jakarta Sans", "Inter", "sans-serif"],
+              mono: ["JetBrains Mono", "monospace"],
+            },
+            boxShadow: {
+              glow: "0 0 20px -5px rgba(117, 215, 255, 0.15)",
+              "glow-pink": "0 0 20px -5px rgba(255, 61, 154, 0.2)",
+              glass: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
+            },
+            borderRadius: {
+              xl: "12px",
+              "2xl": "16px",
+              "3xl": "24px",
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body class="bg-[#08090D] text-[#F5F3EF] min-h-screen font-sans antialiased overflow-x-hidden selection:bg-[#75D7FF]/20 selection:text-[#75D7FF]">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
