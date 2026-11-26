@@ -1,4 +1,4 @@
-# 🎓 AcadeX — College Lecture Archive & Digital Curriculum Platform
+# 🎓 AcadPro — College Lecture Archive & Digital Curriculum Platform
 
 [![Node.js](https://img.shields.io/badge/Node.js-v18%2B-green.svg)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-19.x-blue.svg)](https://react.dev/)
@@ -8,7 +8,7 @@
 [![Cloudinary](https://img.shields.io/badge/Cloudinary-Video_CDN-blueviolet.svg)](https://cloudinary.com/)
 [![License](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
 
-AcadeX is an institutional lecture archive and academic resource management platform built for engineering colleges (specifically tailored to the Indian Institute of Information Technology Pune academic structure). It provides a structured, searchable repository for recorded course lectures arranged strictly by **Academic Session → Semester → Subject → Topic → Lecture → Discussion/Q&A**.
+AcadPro is an institutional lecture archive and academic resource management platform built for engineering colleges (specifically tailored to the Indian Institute of Information Technology Pune academic structure). It provides a structured, searchable repository for recorded course lectures arranged strictly by **Academic Session → Semester → Subject → Topic → Lecture → Discussion/Q&A**.
 
 ---
 
@@ -35,7 +35,7 @@ AcadeX is an institutional lecture archive and academic resource management plat
 College students frequently miss portions of lectures due to illness, conflicting responsibilities, or cognitive overload during dense technical explanations. Generic file-sharing drives or unlisted video playlists lead to fragmented materials, broken access control, zero linkage with official course rosters, and chaotic discussion channels.
 
 ### Purpose and Objectives
-AcadeX provides a role-governed portal that structures all recorded instruction into an official academic curriculum:
+AcadPro provides a role-governed portal that structures all recorded instruction into an official academic curriculum:
 1. **Curriculum Hierarchy:** Organizes learning resources cleanly into Subjects, Topics, and numbered video lectures.
 2. **Access Control & Privacy:** Restricts access to verified college members (`@iiitp.ac.in`) with role-based dashboard views.
 3. **Faculty Course Requests:** Enables faculty to formally propose course offerings with transactional administrator review and automatic student enrollment.
@@ -71,7 +71,7 @@ AcadeX provides a role-governed portal that structures all recorded instruction 
 
 ## 👥 User Roles & Permissions
 
-AcadeX implements strict Role-Based Access Control (RBAC) across three distinct user roles:
+AcadPro implements strict Role-Based Access Control (RBAC) across three distinct user roles:
 
 | Capability / Action | Student | Faculty | Admin |
 |---|:---:|:---:|:---:|
@@ -130,7 +130,7 @@ AcadeX implements strict Role-Based Access Control (RBAC) across three distinct 
 
 ## 🏛 Academic Structure & Configuration
 
-AcadeX is centrally configured for the **2026–2027 Academic Year**:
+AcadPro is centrally configured for the **2026–2027 Academic Year**:
 
 ```
 Academic Year: 2026–2027 (Autumn / Odd Term)
@@ -148,7 +148,7 @@ Academic Year: 2026–2027 (Autumn / Odd Term)
 ## 📁 Project Directory Structure
 
 ```
-Acadex/
+AcadPro/
 ├── Architectural.md                     # Deep system architecture & SDLC analysis
 ├── Architecture.md                      # UI/UX design specifications
 ├── Software Design Document.md          # Formal software design document (SDD v2.0)
@@ -247,8 +247,8 @@ Acadex/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/aaryankumar1435-maker/Acadex.git
-cd Acadex
+git clone https://github.com/ashutoshkumar1435-maker/AcadPro.git
+cd AcadPro
 ```
 
 ### 2. Configure Backend Environment
@@ -261,7 +261,7 @@ cd Backend
 Add your environment parameters:
 ```env
 PORT=10000
-MONGO_DB_URL=mongodb+srv://<username>:<password>@cluster0.example.mongodb.net/Acadex?retryWrites=true&w=majority
+MONGO_DB_URL=mongodb+srv://<username>:<password>@cluster0.example.mongodb.net/AcadPro?retryWrites=true&w=majority
 JWT_SECRET=your_jwt_secret_key_here
 CLOUD_NAME=your_cloudinary_cloud_name
 API_KEY=your_cloudinary_api_key
@@ -331,7 +331,7 @@ The application will launch on: `http://localhost:5173`.
 
 ## 📊 Database Entities & Architecture
 
-AcadeX utilizes **14 collections** in MongoDB Atlas:
+AcadPro utilizes **14 collections** in MongoDB Atlas:
 
 ```
 [AcademicSession] ── governs ──► [Semester]
@@ -425,7 +425,7 @@ node scripts/inspect_db.js
 ## 🤝 Contributing & Project Status
 
 ### Project Status
-AcadeX is in **Project Final** status. The current codebase has been reconciled and verified against all core academic requirements for the **2026–2027** academic year.
+AcadPro is in **Project Final** status. The current codebase has been reconciled and verified against all core academic requirements for the **2026–2027** academic year.
 
 ### Contribution Guidelines
 1. Fork the repository and create a feature branch (`git checkout -b feature/academic-enhancement`).

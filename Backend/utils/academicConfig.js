@@ -1,5 +1,5 @@
 /**
- * Centralized Academic Year and Semester Configuration for AcadeX
+ * Centralized Academic Year and Semester Configuration for AcadPro
  */
 
 export const ACTIVE_ACADEMIC_YEAR = "2026-2027";

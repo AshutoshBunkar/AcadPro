@@ -20,11 +20,11 @@ async function seedData() {
   console.log("Connected to MongoDB.");
 
   // 1. Ensure Admin exists with password 'admin123'
-  let admin = await Admin.findOne({ email: "aaryankumar1435@gmail.com" });
+  let admin = await Admin.findOne({ email: "ashutoshkumar1435@gmail.com" });
   if (!admin) {
     admin = await Admin.create({
-      name: "Aryan Kumar (Admin)",
-      email: "aaryankumar1435@gmail.com",
+      name: "Ashutosh Kumar (Admin)",
+      email: "ashutoshkumar1435@gmail.com",
       password: "admin123",
       role: "admin",
       designation: "Chief System Administrator",
@@ -378,7 +378,7 @@ async function seedData() {
 
   console.log("Seeded sample topics and lectures.");
 
-  console.log("\n=== ACADEX REALISTIC COLLEGE DATA SEEDED SUCCESSFULLY! ===");
+  console.log("\n=== ACADPRO REALISTIC COLLEGE DATA SEEDED SUCCESSFULLY! ===");
   process.exit(0);
 }
 

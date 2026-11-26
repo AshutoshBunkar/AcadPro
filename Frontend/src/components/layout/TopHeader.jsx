@@ -215,7 +215,7 @@ export default function TopHeader({
             ) : (
               <div className="flex items-center gap-2 text-xs text-[#A4ADBA]">
                 <span className="font-semibold text-[#F5F3EF]">
-                  AcadeX Academic Platform
+                  AcadPro Academic Platform
                 </span>
                 <span>•</span>
                 <span className="text-[#75D7FF]">
@@ -536,7 +536,7 @@ export default function TopHeader({
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-[#F43F5E] hover:bg-[#F43F5E]/10 transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span>Sign Out of AcadeX</span>
+                    <span>Sign Out of AcadPro</span>
                   </button>
                 </div>
               </div>

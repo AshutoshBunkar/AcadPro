@@ -20,7 +20,7 @@ import { ACTIVE_ACADEMIC_YEAR } from "../utils/academicConfig.js";
 
 async function run() {
   console.log("================================================================================");
-  console.log("        ACADEX RECONCILIATION AND 9-SCENARIO VERIFICATION SUITE         ");
+  console.log("        ACADPRO RECONCILIATION AND 9-SCENARIO VERIFICATION SUITE         ");
   console.log("================================================================================\n");
 
   await mongoose.connect(process.env.MONGO_DB_URL);
@@ -175,7 +175,7 @@ async function run() {
         newYear: 3,
         newSemester: 5,
       },
-      user: { name: "System Admin", email: "admin@acadex.edu" },
+      user: { name: "System Admin", email: "admin@acadpro.edu" },
     };
     const resPromote = {
       status(code) {

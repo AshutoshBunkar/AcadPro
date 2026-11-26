@@ -976,7 +976,7 @@ function CreateFacultyDialog({ open, onClose }) {
           <input
             type="email"
             required
-            placeholder="instructor@acadex.edu"
+            placeholder="instructor@acadpro.edu"
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
             className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
@@ -1909,7 +1909,7 @@ export default function AdminDashboard() {
   const handleExportDirectory = () => {
     const exportData = {
       exportedAt: new Date().toISOString(),
-      institution: "AcadeX Central Administration",
+      institution: "AcadPro Central Administration",
       totalSemesters: semestersList.length,
       totalSubjects: subjectsList.length,
       totalFaculty: facultyList.length,
@@ -1920,7 +1920,7 @@ export default function AdminDashboard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `acadex-directory-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `acadpro-directory-export-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };

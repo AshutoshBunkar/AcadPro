@@ -24,7 +24,7 @@ import {
 
 async function runAcceptanceVerification() {
   console.log("================================================================================");
-  console.log("             ACADEX ACCEPTANCE CRITERIA VERIFICATION (PARTS 1 - 5)              ");
+  console.log("             ACADPRO ACCEPTANCE CRITERIA VERIFICATION (PARTS 1 - 5)              ");
   console.log("================================================================================\n");
 
   await mongoose.connect(process.env.MONGO_DB_URL);

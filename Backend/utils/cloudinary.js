@@ -17,7 +17,7 @@ const uploadOnCloudinary = async (localFilePath, options = {}) => {
         localFilePath,
         {
           resource_type: "video",
-          folder: "acadex/lectures",
+          folder: "acadpro/lectures",
           chunk_size: 6000000, // 6MB chunks
           ...options,
         },

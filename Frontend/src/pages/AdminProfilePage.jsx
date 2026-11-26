@@ -138,9 +138,9 @@ export default function AdminProfilePage() {
       const updated = res.data?.data;
       if (updated) {
         try {
-          const stored = localStorage.getItem("acadex_user");
+          const stored = localStorage.getItem("acadpro_user");
           const parsed = stored ? JSON.parse(stored) : {};
-          localStorage.setItem("acadex_user", JSON.stringify({ ...parsed, ...updated }));
+          localStorage.setItem("acadpro_user", JSON.stringify({ ...parsed, ...updated }));
         } catch (e) {
           console.error("Failed to sync admin user in localStorage", e);
         }

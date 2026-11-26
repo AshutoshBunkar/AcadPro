@@ -1,4 +1,4 @@
-# AcadeX — System Architecture and SDLC
+# AcadPro — System Architecture and SDLC
 
 Technical Architecture Specification, Data Flows, and Software Development Life Cycle Analysis  
 **System Version:** 1.0.0 (Project Final) • **Configured Academic Year:** 2026–2027 • **Active Term Semesters:** 1st, 3rd, 5th, 7th
@@ -7,7 +7,7 @@ Technical Architecture Specification, Data Flows, and Software Development Life 
 
 ## 1. Architectural Overview
 
-AcadeX is an institutional academic lecture archive and digital learning platform designed for engineering colleges (specifically structured around the Indian Institute of Information Technology Pune curriculum ecosystem). The platform bridges classroom instruction and self-paced study by providing a structured hierarchy for lecture recordings: **Academic Session → Semester → Subject → Topic → Lecture → Discussion/Q&A**.
+AcadPro is an institutional academic lecture archive and digital learning platform designed for engineering colleges (specifically structured around the Indian Institute of Information Technology Pune curriculum ecosystem). The platform bridges classroom instruction and self-paced study by providing a structured hierarchy for lecture recordings: **Academic Session → Semester → Subject → Topic → Lecture → Discussion/Q&A**.
 
 The system adopts a **decoupled, multi-tier client-server architecture** organized into clean separation of concerns:
 
@@ -270,8 +270,8 @@ sequenceDiagram
         else Password Valid
             AuthAPI->>AuthAPI: jwt.sign({ id, role }, JWT_SECRET, { expiresIn: '7d' })
             AuthAPI-->>Client: HTTP 200 { user, token }
-            Client->>Client: localStorage.setItem('acadex_token', token)
-            Client->>Client: localStorage.setItem('acadex_user', JSON.stringify(user))
+            Client->>Client: localStorage.setItem('acadpro_token', token)
+            Client->>Client: localStorage.setItem('acadpro_user', JSON.stringify(user))
             Client->>Router: Navigate to role dashboard
             Router->>Router: Validate token & role against allowedRoles
             Router-->>User: Render Dashboard
@@ -471,7 +471,7 @@ sequenceDiagram
 
 ## 5. Database Architecture and Entity-Relationship Model
 
-AcadeX uses a schema-enforced document store running on MongoDB Atlas.
+AcadPro uses a schema-enforced document store running on MongoDB Atlas.
 
 ### 5.1 Complete Entity-Relationship (ER) Diagram
 
@@ -689,7 +689,7 @@ erDiagram
 
 ## 6. Security Architecture and Trust Boundaries
 
-AcadeX implements defense-in-depth principles across all architectural tiers:
+AcadPro implements defense-in-depth principles across all architectural tiers:
 
 ```
 [ UNTRUSTED PUBLIC CLIENTS ]
@@ -750,7 +750,7 @@ AcadeX implements defense-in-depth principles across all architectural tiers:
 
 ### 8.1 Empirical Methodology: Agile Iterative and Incremental Development
 
-The development history of AcadeX demonstrates that the system was built using an **Agile SDLC** adhering to an **Iterative and Incremental Development approach**.
+The development history of AcadPro demonstrates that the system was built using an **Agile SDLC** adhering to an **Iterative and Incremental Development approach**.
 
 Rather than attempting to define an exhaustive, immutable blueprint upfront or implementing formal rigid ceremonies, the project evolved through successive working versions driven by hands-on verification, code refactoring, and integration testing:
 
@@ -769,7 +769,7 @@ INCREMENTAL (Feature Growth)                        ITERATIVE (Quality Refinemen
 - Iteration 5: Subject Request Workflow             - Cloudinary chunked streaming resilience
 ```
 
-#### Core Concepts as Manifested in AcadeX:
+#### Core Concepts as Manifested in AcadPro:
 1. **Agile (Adaptive & Feedback-Driven):**
    - Requirements were refined based on practical deployment observations (e.g. recognizing that faculty needed a formal workflow to propose elective courses, leading to the creation of `SubjectRequest`).
    - Changes were made in response to test outputs and schema reconciliation needs rather than rigid contract specifications.
@@ -788,21 +788,21 @@ INCREMENTAL (Feature Growth)                        ITERATIVE (Quality Refinemen
 
 ### 8.2 Comparison with Alternative SDLC Models
 
-| Attribute | Agile Iterative & Incremental (AcadeX) | Waterfall Model | Spiral Model |
+| Attribute | Agile Iterative & Incremental (AcadPro) | Waterfall Model | Spiral Model |
 |---|---|---|---|
 | **Requirement Flexibility** | High; accommodates evolving academic rules | Low; requirements frozen in phase 1 | Moderate; adjusted after each risk cycle |
 | **Delivery Model** | Working software delivered at each iteration | Single monolithic delivery at project end | Incremental prototypes following risk analysis |
 | **Testing Integration** | Continuous testing after every feature addition | Performed exclusively after implementation | Performed per cycle, focused on risk |
-| **Suitability for AcadeX** | **Highly Suitable:** Modules (courses, lectures, requests) have deep interdependencies requiring frequent validation | **Unsuitable:** Academic semester requirements and schema invariants evolved significantly during build | **Less Representative:** AcadeX focused on feature functionality and UI rather than formal risk mitigation cycles |
+| **Suitability for AcadPro** | **Highly Suitable:** Modules (courses, lectures, requests) have deep interdependencies requiring frequent validation | **Unsuitable:** Academic semester requirements and schema invariants evolved significantly during build | **Less Representative:** AcadPro focused on feature functionality and UI rather than formal risk mitigation cycles |
 
 > [!NOTE]
 > **Process Accuracy Note:** The team did not follow formal Scrum ceremonies (daily standups, sprint point estimations, or burn-down charts). Describing the workflow as Agile reflects its adaptive, iterative, test-driven nature rather than adherence to formal commercial frameworks.
 
 ---
 
-## 9. AcadeX Development and Feedback Cycle
+## 9. AcadPro Development and Feedback Cycle
 
-The recurring development cycle followed during the evolution of the AcadeX codebase is visualized below:
+The recurring development cycle followed during the evolution of the AcadPro codebase is visualized below:
 
 ```mermaid
 flowchart TD
@@ -829,7 +829,7 @@ flowchart TD
 ```
 
 ### 9.1 Cross-Module Ripple Effects and Regression Testing
-In AcadeX, changes to one subsystem directly impact dependent subsystems:
+In AcadPro, changes to one subsystem directly impact dependent subsystems:
 - **Modifying `SubjectRequest` Status to Approved:** Automatically invokes the `Subject` catalog, `Semester` status, `TeachingAssignment` allocation, `StudentEnrollment` batch generation, `Notification` dispatch, and `AuditLog` creation. If any step fails, an unhandled error could leave phantom courses or enroll students in non-existent offerings.
 - **Student Year Promotion:** Progresses students from Year 1 Sem 1 to Year 2 Sem 3. This triggers a status change of previous enrollments to `completed`, removes students from active course rosters, and enrolls them into new semester courses.
 - **Why Automated Regression Scripts Matter:** The 14-test suite (`verify_full_academic_workflow.js`) executes these cross-module scenarios in sequence, confirming that atomic transactions roll back cleanly upon simulated failure and that data integrity is maintained across all 14 collections.
@@ -853,7 +853,7 @@ The repository contains automated verification scripts designed to validate the 
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│               ACADEX VERIFIED TEST MATRIX (14 SCENARIOS)               │
+│               ACADPRO VERIFIED TEST MATRIX (14 SCENARIOS)               │
 ├──────┬────────────────────────────────────────────┬───────────┬────────┤
 │ Test │ Scenario Description                       │ Expected  │ Result │
 ├──────┼────────────────────────────────────────────┼───────────┼────────┤

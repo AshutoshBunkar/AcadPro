@@ -20,7 +20,7 @@ async function runApiTests() {
     if (!adminUser) {
       adminUser = await Admin.create({
         name: "Admin Tester",
-        email: "admintest@acadex.edu",
+        email: "admintest@acadpro.edu",
         password: "hashedpassword123",
         role: "admin"
       });

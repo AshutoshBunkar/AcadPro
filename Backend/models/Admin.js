@@ -45,7 +45,7 @@ const adminSchema = new mongoose.Schema({
 
   allowedDomains: {
     type: [String],
-    default: ["acadex.edu", "iiitp.ac.in", "faculty.acadex.edu"]
+    default: ["acadpro.edu", "iiitp.ac.in", "faculty.acadpro.edu"]
   }
 }, { timestamps: true });
 

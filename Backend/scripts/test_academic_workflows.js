@@ -12,7 +12,7 @@ import { TeachingAssignment } from "../models/TeachingAssignment.js";
 import { AcademicSession } from "../models/AcademicSession.js";
 
 async function runTests() {
-  console.log("=== STARTING ACADEX BUSINESS LOGIC & WORKFLOW TESTS ===");
+  console.log("=== STARTING ACADPRO BUSINESS LOGIC & WORKFLOW TESTS ===");
 
   await mongoose.connect(process.env.MONGO_DB_URL || process.env.DB_URL);
   console.log("Connected to MongoDB for test verification.\n");
@@ -87,7 +87,7 @@ async function runTests() {
     if (!sampleStudent) {
       sampleStudent = await Student.create({
         name: "Test Student",
-        email: "teststudent@acadex.edu",
+        email: "teststudent@acadpro.edu",
         password: "hashedpassword123",
         department: "Computer Science",
         year: 2,

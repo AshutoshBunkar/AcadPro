@@ -7,7 +7,7 @@ export default function AppLayout({ children, title, subtitle, fullWidth = false
   // Persist sidebar collapsed state
   const [collapsed, setCollapsed] = useState(() => {
     try {
-      return localStorage.getItem("acadex_sidebar_collapsed") === "true";
+      return localStorage.getItem("acadpro_sidebar_collapsed") === "true";
     } catch {
       return false;
     }
@@ -17,7 +17,7 @@ export default function AppLayout({ children, title, subtitle, fullWidth = false
 
   useEffect(() => {
     try {
-      localStorage.setItem("acadex_sidebar_collapsed", String(collapsed));
+      localStorage.setItem("acadpro_sidebar_collapsed", String(collapsed));
     } catch {
       // ignore
     }

@@ -8,7 +8,7 @@ import { TeachingAssignment } from "../models/TeachingAssignment.js";
 import { StudentEnrollment } from "../models/StudentEnrollment.js";
 
 async function runMigration() {
-  console.log("=== Acadex Semester & Enrollment Migration Starting ===");
+  console.log("=== AcadPro Semester & Enrollment Migration Starting ===");
   await mongoose.connect(process.env.MONGO_DB_URL);
   console.log("Connected to MongoDB Atlas");
 

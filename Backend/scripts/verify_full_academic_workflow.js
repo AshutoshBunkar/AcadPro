@@ -1,5 +1,5 @@
 /**
- * AcadeX Full Academic Workflow & Synchronization Test Suite
+ * AcadPro Full Academic Workflow & Synchronization Test Suite
  * Tests: A, B, C, D, E, F, G, H, I, J, K, L, M, N
  */
 
@@ -59,7 +59,7 @@ function createMockReqRes({ user, body = {}, params = {}, query = {} }) {
 
 async function runTests() {
   console.log("================================================================================");
-  console.log("       ACADEX COMPREHENSIVE ACADEMIC WORKFLOW VERIFICATION SUITE                ");
+  console.log("       ACADPRO COMPREHENSIVE ACADEMIC WORKFLOW VERIFICATION SUITE                ");
   console.log("================================================================================\n");
 
   const uri = process.env.MONGO_DB_URL || process.env.MONGODB_URI;
@@ -104,7 +104,7 @@ async function runTests() {
 
   try {
     // Setup test users
-    testFaculty = await Faculty.findOne({ email: "faculty@acadex.edu" }) || await Faculty.findOne();
+    testFaculty = await Faculty.findOne({ email: "faculty@acadpro.edu" }) || await Faculty.findOne();
     testAdmin = await Admin.findOne();
     
     // Find or create an eligible student (CSE, Sem 3)

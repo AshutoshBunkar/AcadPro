@@ -2,6 +2,6 @@ import { createContext } from "react";
 
 export const AuthContext = createContext(null);
 
-export const TOKEN_KEY = "acadex_token";
-export const USER_KEY = "acadex_user";
-export const ROLE_KEY = "acadex_role";
+export const TOKEN_KEY = "acadpro_token";
+export const USER_KEY = "acadpro_user";
+export const ROLE_KEY = "acadpro_role";

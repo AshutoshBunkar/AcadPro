@@ -1,10 +1,10 @@
-# 🎓 Acadex Frontend Architecture & Design Specification
+# 🎓 AcadPro Frontend Architecture & Design Specification
 
 ---
 
 ## 🔐 1. User Roles & Authentication Flow
 
-Acadex operates on **3 Role-Based Portals**:
+AcadPro operates on **3 Role-Based Portals**:
 1. **Admin** (`role: "admin"`) – Manages faculty, course assignments, sessions, and student progression.
 2. **Faculty** (`role: "faculty"`) – Creates topics, uploads video lectures, and replies to student comments/Q&A.
 3. **Student** (`role: "student"`) – Enrolls/browses assigned department/year subjects, watches video lectures, and posts comments.
@@ -125,7 +125,7 @@ Acadex operates on **3 Role-Based Portals**:
 3. **Route Guards:** High-level router wrappers (e.g., `<ProtectedRoute allowedRoles={['admin']} />`).
 4. **Toast Notifications:** Alert users on successful actions (e.g., "Faculty assigned successfully", "Lecture uploaded", "Year promoted").
 =======
-# Acadex — Architecture
+# AcadPro — Architecture
 
 A lecture library for a college. Students who miss part of a class (distraction, absence, whatever) can go back and watch that content, organized the way their courses are actually structured: **subject → topic → lecture**.
 

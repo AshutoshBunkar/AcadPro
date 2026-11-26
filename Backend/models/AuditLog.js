@@ -21,7 +21,7 @@ const auditLogSchema = new mongoose.Schema(
     },
     actorEmail: {
       type: String,
-      default: "s.connor@acadex.edu",
+      default: "s.connor@acadpro.edu",
     },
     ipAddress: {
       type: String,

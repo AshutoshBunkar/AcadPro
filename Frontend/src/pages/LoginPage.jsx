@@ -131,7 +131,7 @@ export default function LoginPage() {
                   placeholder={
                     tab === ROLES.STUDENT
                       ? "rollnumber@iiitp.ac.in"
-                      : "username@acadex.edu"
+                      : "username@acadpro.edu"
                   }
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -203,7 +203,7 @@ export default function LoginPage() {
             {tab === ROLES.STUDENT && (
               <div className="pt-2 text-center">
                 <p className="text-xs text-[#A4ADBA]">
-                  New to AcadeX?{" "}
+                  New to AcadPro?{" "}
                   <RouterLink
                     to="/signup"
                     className="font-semibold text-[#75D7FF] hover:text-[#A8E7FF] hover:underline transition-colors"

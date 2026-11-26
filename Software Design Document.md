@@ -1,4 +1,4 @@
-# Software Design Document: AcadeX
+# Software Design Document: AcadPro
 
 **College Lecture Archive and Academic Resource Management Platform**  
 **Document Version:** 2.0.0 (Production Verified) • **Date:** October 2026  
@@ -9,12 +9,12 @@
 ## 1. Introduction
 
 ### 1.1 Purpose
-This Software Design Document (SDD) specifies the complete software architecture, system modules, data models, functional requirements, and technical interfaces for **AcadeX**, an institutional college lecture archive and digital curriculum management platform. 
+This Software Design Document (SDD) specifies the complete software architecture, system modules, data models, functional requirements, and technical interfaces for **AcadPro**, an institutional college lecture archive and digital curriculum management platform. 
 
 This document serves as the authoritative technical reference for software engineers, academic administrators, system architects, and project evaluators maintaining and extending the platform.
 
 ### 1.2 Project Scope
-AcadeX provides a centralized, authenticated digital learning platform designed to capture and organize academic instruction along real-world institutional structures. It enables college students to review missed lectures, revisit complex lecture topics, and participate in instructor-moderated academic discussions.
+AcadPro provides a centralized, authenticated digital learning platform designed to capture and organize academic instruction along real-world institutional structures. It enables college students to review missed lectures, revisit complex lecture topics, and participate in instructor-moderated academic discussions.
 
 The system encompasses three distinct, role-governed user portals:
 - **Student Portal:** Academic discovery and course enrollment tracking, hierarchical course navigation (Semester → Subject → Topic → Lecture), video playback with multi-bitrate resolution selection, and lecture-specific question/comment submission.
@@ -24,7 +24,7 @@ The system encompasses three distinct, role-governed user portals:
 ### 1.3 Problem Definition
 In traditional college environments, students frequently miss portions of lectures due to illness, schedule conflicts, or cognitive overload during fast-paced lectures. Ad-hoc solutions (such as unstructured cloud drives or unlisted YouTube links) lead to fragmented materials, broken access control, lack of curriculum alignment, and zero connection between video materials, official course rosters, and instructor Q&A.
 
-AcadeX solves these issues by structuring all recordings into a formal academic hierarchy tied to the active academic year, semester, department, and course code, with strictly enforced role-based access control.
+AcadPro solves these issues by structuring all recordings into a formal academic hierarchy tied to the active academic year, semester, department, and course code, with strictly enforced role-based access control.
 
 ### 1.4 Objectives
 1. Provide a reliable, searchable archive of recorded lectures structured strictly by **Subject → Topic → Lecture**.
@@ -60,7 +60,7 @@ AcadeX solves these issues by structuring all recordings into a formal academic 
 ## 2. Overall System Description
 
 ### 2.1 Product Perspective
-AcadeX operates as an autonomous web application deployed in a client-server architecture. It integrates with **MongoDB Atlas** for document persistence and **Cloudinary** for video transcoding, thumbnail extraction, and adaptive content delivery.
+AcadPro operates as an autonomous web application deployed in a client-server architecture. It integrates with **MongoDB Atlas** for document persistence and **Cloudinary** for video transcoding, thumbnail extraction, and adaptive content delivery.
 
 ```
 ┌──────────────────┐         HTTPS / REST          ┌──────────────────┐
@@ -210,7 +210,7 @@ AcadeX operates as an autonomous web application deployed in a client-server arc
 
 ## 5. System Architecture & Communication Model
 
-AcadeX follows a **3-tier decoupled architectural pattern**:
+AcadPro follows a **3-tier decoupled architectural pattern**:
 
 ```
 [ PRESENTATION TIER: React 19 Single Page App ]
@@ -257,7 +257,7 @@ AcadeX follows a **3-tier decoupled architectural pattern**:
 
 ```
                      ┌────────────────────────────────────────┐
-                     │            ACADEX PLATFORM             │
+                     │            ACADPRO PLATFORM             │
                      └───────────────────┬────────────────────┘
                                          │
      ┌───────────────────┬───────────────┴───────────────┬───────────────────┐
@@ -308,7 +308,7 @@ AcadeX follows a **3-tier decoupled architectural pattern**:
 
 ## 7. Database Design & Schema Specifications
 
-The AcadeX database schema consists of **14 Mongoose models** persisted in MongoDB Atlas:
+The AcadPro database schema consists of **14 Mongoose models** persisted in MongoDB Atlas:
 
 ### 7.1 Schema Definitions
 
@@ -323,7 +323,7 @@ Stores administrator identities and master credentials.
 - `accessLevel`: String (Default: "Super Admin")
 - `adminCode`: String (Default: "ADM-90210")
 - `avatar`: String (URL)
-- `allowedDomains`: [String] (Default: `["acadex.edu", "iiitp.ac.in", "faculty.acadex.edu"]`)
+- `allowedDomains`: [String] (Default: `["acadpro.edu", "iiitp.ac.in", "faculty.acadpro.edu"]`)
 - `timestamps`: `createdAt`, `updatedAt`
 
 #### 2. `Faculty` Collection
@@ -651,7 +651,7 @@ Backend error handling relies on two foundational utilities:
 ## 11. Testing Strategy and Verified Results
 
 ### 11.1 Available Test Suites and Verification Scripts
-The AcadeX repository includes automated integration test suites located in `Backend/scripts/`:
+The AcadPro repository includes automated integration test suites located in `Backend/scripts/`:
 
 1. **Comprehensive Academic Workflow Suite (`verify_full_academic_workflow.js`):**
    - **Coverage:** 14 sequential cross-module scenarios executing end-to-end against live MongoDB Atlas.

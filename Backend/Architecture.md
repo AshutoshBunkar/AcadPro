@@ -1,4 +1,4 @@
-# Acadex — Architecture
+# AcadPro — Architecture
 
 A lecture library for a college. Students who miss part of a class (distraction, absence, whatever) can go back and watch that content, organized the way their courses are actually structured: **subject → topic → lecture**.
 

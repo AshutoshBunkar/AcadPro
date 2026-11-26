@@ -12,7 +12,7 @@ import { Lecture } from "../models/Lecture.js";
 
 async function runAcceptanceTests() {
   console.log("================================================================================");
-  console.log("             ACADEX ACCEPTANCE & INTEGRATION TEST VERIFICATION SUITE            ");
+  console.log("             ACADPRO ACCEPTANCE & INTEGRATION TEST VERIFICATION SUITE            ");
   console.log("================================================================================\n");
 
   await mongoose.connect(process.env.MONGO_DB_URL);
@@ -186,9 +186,9 @@ async function runAcceptanceTests() {
         topicId: newTopic._id,
         uploadedBy: ramesh._id,
         title: "Lecture 1: Perceptron Convergence & Feedforward Networks",
-        videoUrl: "https://acadex.edu/videos/cs401-lec1.mp4",
+        videoUrl: "https://acadpro.edu/videos/cs401-lec1.mp4",
         cloudinaryPublicId: "cs401_lec_1_" + Date.now(),
-        thumbnailUrl: "https://acadex.edu/thumbs/cs401.jpg",
+        thumbnailUrl: "https://acadpro.edu/thumbs/cs401.jpg",
         duration: 3600,
         description: "Foundations of neural computing",
       });
