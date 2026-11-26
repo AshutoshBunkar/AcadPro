@@ -1,8 +1,10 @@
+import { limitActivation } from "../middlewares/activationLimit.js";
+import { requestActivation, activateStudent } from "../controllers/studentactivation.js";
 import express from "express";
 import { verifyJWT } from "../middlewares/authmiddleware.js";
 import { authorize } from "../middlewares/rolemiddleware.js";
 import {
-  signup,
+
   LoginStudent,
   getStudentProfile,
   getStudentCurrentCourses,
@@ -13,7 +15,8 @@ import {
 
 const Router = express.Router();
 
-Router.post("/signup", signup);
+Router.post("/signup", limitActivation, requestActivation);
+Router.post("/activate", limitActivation, activateStudent);
 Router.post("/login", LoginStudent);
 Router.get("/profile", verifyJWT, authorize("student"), getStudentProfile);
 Router.get("/current-courses", verifyJWT, authorize("student"), getStudentCurrentCourses);

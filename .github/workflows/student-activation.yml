@@ -1,0 +1,27 @@
+name: Student activation
+on: [pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  activation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+        working-directory: Backend
+      - name: Start disposable MongoDB replica set
+        run: |
+          docker run -d --name activation-db -p 127.0.0.1:27017:27017 mongo:8 --replSet pilot --bind_ip_all
+          until docker exec activation-db mongosh --quiet --eval 'db.adminCommand({ping:1}).ok'; do sleep 1; done
+          docker exec activation-db mongosh --quiet --eval 'rs.initiate({_id:"pilot",members:[{_id:0,host:"localhost:27017"}]})'
+          until docker exec activation-db mongosh --quiet --eval 'quit(db.hello().isWritablePrimary ? 0 : 1)'; do sleep 1; done
+      - run: node scripts/test_student_roster.mjs && node --test scripts/test_student_activation.mjs
+        working-directory: Backend
+        env:
+          ACTIVATION_TEST_PORT: "27017"
+      - run: npm ci && npm run build
+        working-directory: Frontend

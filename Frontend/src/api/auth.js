@@ -1,6 +1,7 @@
 import api from "./axios";
 
 export const studentSignup = (payload) => api.post("/student/signup", payload);
+export const activateStudent = payload => api.post("/student/activate", payload);
 export const studentLogin = (payload) => api.post("/student/login", payload);
 export const facultyLogin = (payload) => api.post("/faculty/login", payload);
 export const adminLogin = (payload) => api.post("/admin/login", payload);

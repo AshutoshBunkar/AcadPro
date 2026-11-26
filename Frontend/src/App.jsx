@@ -24,6 +24,7 @@ export default function App() {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/activate" element={<SignupPage activation />} />
         <Route path="/signup" element={<SignupPage />} />
 
         <Route

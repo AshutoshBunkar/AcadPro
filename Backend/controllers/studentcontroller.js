@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import bcrypt from "bcrypt";
+
 import jwt from "jsonwebtoken";
 import { Student } from "../models/Student.js";
 import { StudentEnrollment } from "../models/StudentEnrollment.js";
@@ -13,72 +13,6 @@ import { Lecture } from "../models/Lecture.js";
 import { TeachingAssignment } from "../models/TeachingAssignment.js";
 import { ACTIVE_ACADEMIC_YEAR } from "../utils/academicConfig.js";
 
-// Sign Up Logic
-const signup = asyncHandler(async (req, res) => {
-  const { name, email, password, mis, year, semester, department } = req.body;
-
-  if (
-    [name, email, password, mis, department].some(
-      (field) => typeof field !== "string" || field.trim() === ""
-    ) ||
-    (semester === undefined && year === undefined)
-  ) {
-    throw new ApiError(400, "All fields are required");
-  }
-
-  if (!email.endsWith("@iiitp.ac.in")) {
-    throw new ApiError(403, "Only IIIT Pune college emails are allowed to register");
-  }
-  const existedStudent = await Student.findOne({
-    $or: [{ mis }, { email }],
-  });
-
-  if (existedStudent) {
-    throw new ApiError(409, "Student with this email or MIS already exists");
-  }
-
-  // Derive semester and year safely
-  let currentSemester;
-  let yearNum;
-
-  if (semester !== undefined && semester !== null) {
-    currentSemester = Number(semester);
-    if (isNaN(currentSemester) || currentSemester < 1 || currentSemester > 8) {
-      throw new ApiError(400, "Semester must be between 1 and 8");
-    }
-    yearNum = Math.ceil(currentSemester / 2);
-  } else {
-    yearNum = Number(year);
-    if (isNaN(yearNum) || yearNum < 1 || yearNum > 4) {
-      throw new ApiError(400, "Year must be between 1 and 4");
-    }
-    currentSemester = (yearNum - 1) * 2 + 1;
-  }
-
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
-
-  const studentUser = await Student.create({
-    name,
-    email,
-    password: hashedPassword,
-    mis,
-    year: yearNum,
-    currentSemester,
-    department,
-  });
-
-  if (!studentUser) {
-    throw new ApiError(500, "Something went wrong while registering the student");
-  }
-
-  const createdStudent = await Student.findById(studentUser._id).select("-password");
-
-  return res
-    .status(201)
-    .json(new ApiResponse(201, createdStudent, "Student registered successfully"));
-});
-
 // Login Logic
 const LoginStudent = asyncHandler(async (req, res) => {
   const { email, password, mis } = req.body;
@@ -87,9 +21,10 @@ const LoginStudent = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Password and either email or mis are required");
   }
 
-  const student = await Student.findOne({
-    $or: [{ email }, { mis }],
-  });
+  const identity = typeof email === "string" && email.trim()
+    ? { email: email.trim() }
+    : { mis: typeof mis === "string" ? mis.trim() : "" };
+  const student = await Student.findOne(identity);
 
   if (!student) {
     throw new ApiError(404, "Student does not exist");
@@ -622,7 +557,7 @@ const getStudentAccessibleResources = asyncHandler(async (req, res) => {
 });
 
 export {
-  signup,
+
   LoginStudent,
   getStudentProfile,
   getStudentCurrentCourses,

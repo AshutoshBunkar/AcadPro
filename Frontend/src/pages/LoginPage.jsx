@@ -40,7 +40,8 @@ export default function LoginPage() {
   const activeTab = TABS.find((t) => t.value === tab);
 
   const mutation = useMutation({
-    mutationFn: () => activeTab.loginFn({ email, password }),
+    mutationFn: () => activeTab.loginFn(tab === ROLES.STUDENT && !email.includes("@")
+      ? { mis: email.trim(), password } : { email: email.trim(), password }),
     onSuccess: (res) => {
       login(tab, res.data.data);
       navigate(DASHBOARD_PATH[tab], { replace: true });
@@ -121,16 +122,16 @@ export default function LoginPage() {
             {/* Email Field */}
             <div>
               <label className="block text-xs font-semibold text-[#A4ADBA] mb-1.5">
-                College Email
+                {tab === ROLES.STUDENT ? "College email or MIS" : "College email"}
               </label>
               <div className="relative flex items-center">
                 <Mail className="w-4 h-4 text-[#A4ADBA] absolute left-3.5 pointer-events-none" />
                 <input
-                  type="email"
+                  type={tab === ROLES.STUDENT ? "text" : "email"}
                   required
                   placeholder={
                     tab === ROLES.STUDENT
-                      ? "rollnumber@iiitp.ac.in"
+                      ? "College email or MIS number"
                       : "username@acadpro.edu"
                   }
                   value={email}
