@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../../context/useAuth";
+import "./navigation.css";
 import Sidebar from "./Sidebar";
 import TopHeader from "./TopHeader";
 import PageTransition from "./PageTransition";
 
 export default function AppLayout({ children, title, subtitle, fullWidth = false }) {
+  const { role } = useAuth();
   // Persist sidebar collapsed state
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -24,7 +27,7 @@ export default function AppLayout({ children, title, subtitle, fullWidth = false
   }, [collapsed]);
 
   return (
-    <div className="min-h-screen bg-[#08090D] text-[#F5F3EF] flex flex-col selection:bg-[#75D7FF]/20 selection:text-[#75D7FF]">
+    <div data-navigation-role={role} className="min-h-screen bg-[#08090D] text-[#F5F3EF] flex flex-col selection:bg-[#75D7FF]/20 selection:text-[#75D7FF]">
       {/* Unified Sidebar Navigation */}
       <Sidebar
         collapsed={collapsed}

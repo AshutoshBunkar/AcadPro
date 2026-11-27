@@ -4,6 +4,21 @@ module.exports = {
         theme: {
           extend: {
             colors: {
+              "nav-canvas": "rgb(var(--nav-canvas, 8 9 13) / <alpha-value>)",
+              "nav-surface": "rgb(var(--nav-surface, 17 20 27) / <alpha-value>)",
+              "nav-subtle": "rgb(var(--nav-subtle, 25 30 40) / <alpha-value>)",
+              "nav-footer": "rgb(var(--nav-footer, 14 17 23) / <alpha-value>)",
+              "nav-row": "rgb(var(--nav-row, 20 24 32) / <alpha-value>)",
+              "nav-line": "rgb(var(--nav-line, 41 47 59) / <alpha-value>)",
+              "nav-accent": "rgb(var(--nav-accent, 117 215 255) / <alpha-value>)",
+              "nav-highlight": "rgb(var(--nav-highlight, 255 61 154) / <alpha-value>)",
+              "nav-muted": "rgb(var(--nav-muted, 164 173 186) / <alpha-value>)",
+              "nav-ink": "rgb(var(--nav-ink, 245 243 239) / <alpha-value>)",
+              "nav-danger": "rgb(var(--nav-danger, 244 63 94) / <alpha-value>)",
+              "nav-success": "rgb(var(--nav-success, 16 185 129) / <alpha-value>)",
+              "nav-success-ink": "rgb(var(--nav-success-ink, 110 231 183) / <alpha-value>)",
+              "nav-danger-ink": "rgb(var(--nav-danger-ink, 253 164 175) / <alpha-value>)",
+
               jet: "#08090D",
               charcoal: "#11141B",
               graphite: "#191E28",

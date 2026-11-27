@@ -29,10 +29,8 @@ export default function Sidebar({
 
   // Close mobile drawer on route change
   useEffect(() => {
-    if (mobileOpen) {
-      setMobileOpen(false);
-    }
-  }, [location.pathname, mobileOpen, setMobileOpen]);
+    setMobileOpen(false);
+  }, [location.pathname, setMobileOpen]);
 
   // Handle escape key to close mobile drawer
   useEffect(() => {
@@ -55,7 +53,7 @@ export default function Sidebar({
     if (role === ROLES.ADMIN) {
       return [
         {
-          title: "Central Command",
+          title: "Administration",
           items: [
             {
               label: "Dashboard",
@@ -135,13 +133,13 @@ export default function Sidebar({
   };
 
   const getRoleBadgeStyle = () => {
-    if (role === ROLES.ADMIN) return "bg-[#FF3D9A]/15 text-[#FF3D9A] border-[#FF3D9A]/30";
-    if (role === ROLES.FACULTY) return "bg-[#75D7FF]/15 text-[#75D7FF] border-[#75D7FF]/30";
-    return "bg-[#75D7FF]/15 text-[#75D7FF] border-[#75D7FF]/30";
+    if (role === ROLES.ADMIN) return "bg-nav-highlight/15 text-nav-highlight border-nav-highlight/30";
+    if (role === ROLES.FACULTY) return "bg-nav-accent/15 text-nav-accent border-nav-accent/30";
+    return "bg-nav-accent/15 text-nav-accent border-nav-accent/30";
   };
 
   // Nav Item Renderer
-  const renderNavItem = (item) => {
+  const renderNavItem = (item, collapsed) => {
     const Icon = item.icon;
     const isActive =
       location.pathname === item.path ||
@@ -154,18 +152,20 @@ export default function Sidebar({
       <Link
         key={item.path}
         to={item.path}
-        title={collapsed ? item.label : undefined}
-        className={`group relative flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#75D7FF] ${
+        aria-current={isActive ? "page" : undefined}
+          aria-label={item.label}
+          title={collapsed ? item.label : undefined}
+        className={`group relative flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-nav-accent ${
           isActive
-            ? "bg-[#75D7FF]/10 text-[#F5F3EF] border-l-4 border-[#75D7FF] shadow-[0_0_15px_-3px_rgba(117,215,255,0.15)] font-semibold"
-            : "text-[#A4ADBA] hover:text-[#F5F3EF] hover:bg-[#191E28]/70 border-l-4 border-transparent"
+            ? "bg-nav-accent/10 text-nav-ink border-l-4 border-nav-accent  font-semibold"
+            : "text-nav-muted hover:text-nav-ink hover:bg-nav-subtle/70 border-l-4 border-transparent"
         } ${collapsed ? "justify-center px-0 py-3" : ""}`}
       >
         <div
           className={`flex items-center justify-center transition-colors ${
             isActive
-              ? "text-[#75D7FF]"
-              : "text-[#A4ADBA] group-hover:text-[#75D7FF]"
+              ? "text-nav-accent"
+              : "text-nav-muted group-hover:text-nav-accent"
           }`}
         >
           <Icon className="w-5 h-5 flex-shrink-0" />
@@ -178,8 +178,8 @@ export default function Sidebar({
               <span
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
                   item.badgeColor === "neon"
-                    ? "bg-[#FF3D9A]/20 text-[#FF3D9A] border border-[#FF3D9A]/30"
-                    : "bg-[#75D7FF]/20 text-[#75D7FF] border border-[#75D7FF]/30"
+                    ? "bg-nav-highlight/20 text-nav-highlight border border-nav-highlight/30"
+                    : "bg-nav-accent/20 text-nav-accent border border-nav-accent/30"
                 }`}
               >
                 {item.badge}
@@ -190,7 +190,7 @@ export default function Sidebar({
 
         {/* Collapsed Tooltip on Hover */}
         {collapsed && (
-          <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#191E28] border border-[#292F3B] text-[#F5F3EF] text-xs font-semibold rounded-lg shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 whitespace-nowrap">
+          <div className="absolute left-full ml-3 px-3 py-1.5 bg-nav-subtle border border-nav-line text-nav-ink text-xs font-semibold rounded-lg shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 whitespace-nowrap">
             {item.label}
           </div>
         )}
@@ -198,30 +198,31 @@ export default function Sidebar({
     );
   };
 
-  const sidebarContent = (
-    <div className="flex flex-col h-full bg-[#11141B] border-r border-[#292F3B] select-none text-[#F5F3EF]">
+  const sidebarContent = (collapsed) => (
+    <div className="portal-nav flex flex-col h-full bg-nav-surface border-r border-nav-line select-none text-nav-ink">
       {/* Brand Header */}
       <div
-        className={`flex items-center justify-between h-20 px-5 border-b border-[#292F3B] ${
+        className={`flex items-center justify-between h-20 px-5 border-b border-nav-line ${
           collapsed ? "justify-center px-2" : ""
         }`}
       >
         <Link
+          aria-label="AcadPro home"
           to={DASHBOARD_PATH[role] || "/login"}
           className="flex items-center gap-3 group outline-none"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#75D7FF]/25 to-[#FF3D9A]/25 border border-[#75D7FF]/40 flex items-center justify-center text-[#75D7FF] shadow-[0_0_20px_-5px_rgba(117,215,255,0.3)] group-hover:scale-105 transition-transform flex-shrink-0">
-            <GraduationCap className="w-5 h-5 text-[#75D7FF]" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-nav-accent/25 to-nav-highlight/25 border border-nav-accent/40 flex items-center justify-center text-nav-accent  group-hover:scale-105 transition-transform flex-shrink-0">
+            <GraduationCap className="w-5 h-5 text-nav-accent" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="font-display font-extrabold text-xl tracking-tight text-[#F5F3EF]">
-                  Acade<span className="text-[#75D7FF]">X</span>
+                <span className="font-display font-extrabold text-xl tracking-tight text-nav-ink">
+                  Acad<span className="text-nav-accent">Pro</span>
                 </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#FF3D9A] animate-pulse"></span>
+
               </div>
-              <p className="text-[10px] uppercase tracking-wider font-semibold text-[#A4ADBA] truncate">
+              <p className="text-[10px] uppercase tracking-wider font-semibold text-nav-muted truncate">
                 Academic Platform
               </p>
             </div>
@@ -231,7 +232,7 @@ export default function Sidebar({
         {/* Close button for mobile drawer */}
         <button
           onClick={() => setMobileOpen(false)}
-          className="md:hidden p-1.5 rounded-lg text-[#A4ADBA] hover:text-[#F5F3EF] hover:bg-[#191E28] transition-colors"
+          className="md:hidden p-1.5 rounded-lg text-nav-muted hover:text-nav-ink hover:bg-nav-subtle transition-colors"
           aria-label="Close navigation drawer"
         >
           <X className="w-5 h-5" />
@@ -243,27 +244,27 @@ export default function Sidebar({
         {navSections.map((section, sIdx) => (
           <div key={sIdx} className="space-y-1.5">
             {!collapsed && (
-              <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-[#A4ADBA]/60 mb-2">
+              <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-nav-muted mb-2">
                 {section.title}
               </p>
             )}
             <div className="space-y-1">
-              {section.items.map((item) => renderNavItem(item))}
+              {section.items.map((item) => renderNavItem(item, collapsed))}
             </div>
           </div>
         ))}
 
         {/* Context / Quick Info Card when expanded */}
-        {!collapsed && user && (
+        {!collapsed && user && role !== ROLES.ADMIN && (
           <div className="pt-2">
-            <div className="p-3.5 rounded-xl bg-[#191E28]/60 border border-[#292F3B] text-xs">
-              <div className="flex items-center gap-2 mb-1.5 text-[#75D7FF]">
+            <div className="p-3.5 rounded-xl bg-nav-subtle/60 border border-nav-line text-xs">
+              <div className="flex items-center gap-2 mb-1.5 text-nav-accent">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span className="font-semibold text-[11px] uppercase tracking-wider">
                   Campus Session
                 </span>
               </div>
-              <p className="text-[#A4ADBA] text-[11px] leading-relaxed">
+              <p className="text-nav-muted text-[11px] leading-relaxed">
                 {user.department ? `${user.department} Department` : "IIIT Pune"}
                 {user.year ? ` • Year ${user.year}` : ""}
               </p>
@@ -273,14 +274,14 @@ export default function Sidebar({
       </div>
 
       {/* Footer / User Profile & Collapse Toggle */}
-      <div className="p-3.5 border-t border-[#292F3B] bg-[#0E1117] space-y-2">
+      <div className="p-3.5 border-t border-nav-line bg-nav-footer space-y-2">
         {/* User Card */}
         <div
           className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-            collapsed ? "justify-center p-1" : "bg-[#191E28]/50 border border-[#292F3B]"
+            collapsed ? "justify-center p-1" : "bg-nav-subtle/50 border border-nav-line"
           }`}
         >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#75D7FF]/20 to-[#FF3D9A]/20 border border-[#75D7FF]/30 flex items-center justify-center text-[#75D7FF] font-bold text-sm flex-shrink-0 overflow-hidden">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-nav-accent/20 to-nav-highlight/20 border border-nav-accent/30 flex items-center justify-center text-nav-accent font-bold text-sm flex-shrink-0 overflow-hidden">
             {user?.avatar ? (
               <img
                 src={user.avatar}
@@ -297,7 +298,7 @@ export default function Sidebar({
 
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-[#F5F3EF] truncate leading-tight">
+              <p className="text-xs font-semibold text-nav-ink truncate leading-tight">
                 {user?.name || "AcadPro User"}
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
@@ -314,7 +315,7 @@ export default function Sidebar({
             <button
               onClick={handleLogout}
               title="Sign out"
-              className="p-1.5 rounded-lg text-[#A4ADBA] hover:text-[#F43F5E] hover:bg-[#F43F5E]/10 transition-colors"
+              className="p-1.5 rounded-lg text-nav-muted hover:text-nav-danger hover:bg-nav-danger/10 transition-colors"
               aria-label="Sign out"
             >
               <LogOut className="w-4 h-4" />
@@ -327,7 +328,7 @@ export default function Sidebar({
           <button
             onClick={handleLogout}
             title="Sign out"
-            className="w-full flex items-center justify-center p-2 rounded-xl text-[#A4ADBA] hover:text-[#F43F5E] hover:bg-[#F43F5E]/10 transition-colors"
+            className="w-full flex items-center justify-center p-2 rounded-xl text-nav-muted hover:text-nav-danger hover:bg-nav-danger/10 transition-colors"
             aria-label="Sign out"
           >
             <LogOut className="w-4 h-4" />
@@ -337,14 +338,14 @@ export default function Sidebar({
         {/* Desktop Collapse Toggle Button */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="hidden md:flex w-full items-center justify-center gap-2 py-1.5 px-2 rounded-lg text-xs font-medium text-[#A4ADBA] hover:text-[#F5F3EF] hover:bg-[#191E28] transition-colors border border-transparent hover:border-[#292F3B]"
+          className="hidden md:flex w-full items-center justify-center gap-2 py-1.5 px-2 rounded-lg text-xs font-medium text-nav-muted hover:text-nav-ink hover:bg-nav-subtle transition-colors border border-transparent hover:border-nav-line"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? (
-            <ChevronRight className="w-4 h-4 text-[#75D7FF]" />
+            <ChevronRight className="w-4 h-4 text-nav-accent" />
           ) : (
             <>
-              <ChevronLeft className="w-4 h-4 text-[#75D7FF]" />
+              <ChevronLeft className="w-4 h-4 text-nav-accent" />
               <span className="text-[11px]">Collapse Navigation</span>
             </>
           )}
@@ -361,7 +362,7 @@ export default function Sidebar({
           collapsed ? "w-20" : "w-64"
         }`}
       >
-        {sidebarContent}
+        {sidebarContent(collapsed)}
       </aside>
 
       {/* Mobile Drawer (Responsive slide-out) */}
@@ -373,7 +374,7 @@ export default function Sidebar({
         {/* Backdrop overlay */}
         <div
           onClick={() => setMobileOpen(false)}
-          className={`fixed inset-0 bg-[#08090D]/80 backdrop-blur-sm transition-opacity duration-300 ${
+          className={`fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${
             mobileOpen ? "opacity-100" : "opacity-0"
           }`}
         />
@@ -384,7 +385,7 @@ export default function Sidebar({
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          {sidebarContent}
+          {sidebarContent(false)}
         </div>
       </div>
     </>

@@ -1,0 +1,28 @@
+[data-navigation-role="admin"] {
+  --nav-canvas: 247 246 241;
+  --nav-surface: 255 255 255;
+  --nav-subtle: 237 243 239;
+  --nav-footer: 247 248 244;
+  --nav-row: 248 250 247;
+  --nav-line: 206 217 211;
+  --nav-accent: 0 105 94;
+  --nav-highlight: 0 105 94;
+  --nav-muted: 82 100 96;
+  --nav-ink: 25 45 42;
+  --nav-danger: 153 63 55;
+  --nav-success: 53 96 70;
+  --nav-success-ink: 53 96 70;
+  --nav-danger-ink: 153 63 55;
+}
+
+[data-navigation-role="admin"] .portal-nav {
+  font-family: "DM Sans", system-ui, sans-serif;
+  color-scheme: light;
+}
+[data-navigation-role="admin"] .portal-nav .font-display {
+  font-family: Spectral, Georgia, serif;
+}
+[data-navigation-role="admin"] .portal-nav :focus-visible {
+  outline: 2px solid #00695e;
+  outline-offset: 2px;
+}

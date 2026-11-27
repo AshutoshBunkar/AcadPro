@@ -1,7 +1,8 @@
+import AcademicSessionForm from "../components/AcademicSessionForm";
 import ReferenceAudience from "../components/ReferenceAudience";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import "./admin.css";
 import {
   GraduationCap,
   Users,
@@ -52,43 +53,41 @@ import { getErrorMessage } from "../api/axios";
 // UNIFIED MODAL DIALOG WRAPPER
 // ==========================================
 function ModalWrapper({ open, onClose, title, subtitle, icon: Icon, children }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const dialog = ref.current;
+    dialog.showModal();
+    return () => dialog.close();
+  }, [open]);
   if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-      <div
-        className="fixed inset-0 bg-[#08090D]/85 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-      />
-      <motion.div role="dialog" aria-modal="true" aria-label={title}
-        initial={{ opacity: 0, scale: 0.95, y: 15 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        transition={{ duration: 0.2 }}
-        className="relative w-full max-w-lg bg-[#11141B] border border-[#292F3B] rounded-2xl shadow-2xl overflow-hidden z-10 my-8 text-[#F5F3EF]"
-      >
-        <div className="px-6 py-5 border-b border-[#292F3B] flex items-center justify-between bg-[#191E28]/40">
+    <dialog ref={ref} aria-label={title} className="admin-dialog"
+      onCancel={event => { event.preventDefault(); onClose(); }}
+      onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
+      <div>
+        <div className="px-6 py-5 border-b border-[#C9D4CE] flex items-center justify-between bg-[#F2F5F2]/40">
           <div className="flex items-center gap-3">
             {Icon && (
-              <div className="w-10 h-10 rounded-xl bg-[#75D7FF]/15 border border-[#75D7FF]/30 flex items-center justify-center text-[#75D7FF]">
+              <div className="w-10 h-10 rounded-xl bg-[#00695E]/15 border border-[#00695E]/30 flex items-center justify-center text-[#00695E]">
                 <Icon className="w-5 h-5" />
               </div>
             )}
             <div>
-              <h3 className="text-base font-bold text-[#F5F3EF] tracking-tight">{title}</h3>
-              {subtitle && <p className="text-xs text-[#A4ADBA] mt-0.5">{subtitle}</p>}
+              <h3 className="text-base font-bold text-[#192D2A] tracking-tight">{title}</h3>
+              {subtitle && <p className="text-xs text-[#526460] mt-0.5">{subtitle}</p>}
             </div>
           </div>
           <button
             aria-label="Close dialog" onClick={onClose}
-            className="p-1.5 rounded-lg text-[#A4ADBA] hover:text-[#F5F3EF] hover:bg-white/5 transition-colors"
+            className="p-1.5 rounded-lg text-[#526460] hover:text-[#192D2A] hover:bg-white/5 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="p-6 max-h-[75vh] overflow-y-auto">{children}</div>
-      </motion.div>
-    </div>
+      </div>
+    </dialog>
   );
 }
 
@@ -128,19 +127,19 @@ function CreateSemesterDialog({ open, onClose, directories }) {
       >
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Academic Year</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Academic Year</label>
             <input aria-label="Academic year" required pattern="[0-9]{4}-[0-9]{4}"
               value={form.academicYear}
               onChange={(e) => setForm((f) => ({ ...f, academicYear: e.target.value }))}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs sm:text-sm text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs sm:text-sm text-[#192D2A] focus:outline-none focus:border-[#00695E]"
              />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Target Semester</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Target Semester</label>
             <select
               value={form.semesterNumber}
               onChange={(e) => setForm((f) => ({ ...f, semesterNumber: Number(e.target.value) }))}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs sm:text-sm text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs sm:text-sm text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             >
               {SEMESTER_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -152,46 +151,46 @@ function CreateSemesterDialog({ open, onClose, directories }) {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Display Title</label>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">Display Title</label>
           <input
             type="text"
             required
             placeholder="e.g. Autumn Semester 2025"
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className="w-full px-3.5 py-2.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs sm:text-sm text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3.5 py-2.5 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs sm:text-sm text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Description (Optional)</label>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">Description (Optional)</label>
           <textarea
             rows={2}
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             placeholder="Curriculum session notes..."
-            className="w-full px-3.5 py-2.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs sm:text-sm text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3.5 py-2.5 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs sm:text-sm text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           />
         </div>
 
         {mutation.isError && (
-          <div className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#FDA4AF] text-xs">
+          <div role="alert" className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#993F37] text-xs">
             {getErrorMessage(mutation.error)}
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-3 border-t border-[#292F3B]">
+        <div className="flex justify-end gap-3 pt-3 border-t border-[#C9D4CE]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#A4ADBA] hover:text-[#F5F3EF]"
+            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#526460] hover:text-[#192D2A]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#75D7FF] hover:bg-[#A8E7FF] text-[#08090D] shadow-md shadow-[#75D7FF]/20"
+            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#00695E] hover:bg-[#00554D] text-[#F7F6F1] shadow-md shadow-[#00695E]/20"
           >
             {mutation.isPending ? "Creating..." : "Save Semester"}
           </button>
@@ -268,14 +267,14 @@ function EnrollStudentDialog({ open, onClose, directories }) {
     >
       <div className="space-y-4">
         {/* Tabs */}
-        <div className="grid grid-cols-2 gap-1 p-1 bg-[#191E28] rounded-xl border border-[#292F3B]">
+        <div className="grid grid-cols-2 gap-1 p-1 bg-[#F2F5F2] rounded-xl border border-[#C9D4CE]">
           <button
             type="button"
             onClick={() => setTabIndex(0)}
             className={`py-2 text-xs font-bold rounded-lg transition-all ${
               tabIndex === 0
-                ? "bg-[#75D7FF] text-[#08090D] shadow-md shadow-[#75D7FF]/20"
-                : "text-[#A4ADBA] hover:text-[#F5F3EF]"
+                ? "bg-[#00695E] text-[#F7F6F1] shadow-md shadow-[#00695E]/20"
+                : "text-[#526460] hover:text-[#192D2A]"
             }`}
           >
             Batch Departmental Enrollment
@@ -285,8 +284,8 @@ function EnrollStudentDialog({ open, onClose, directories }) {
             onClick={() => setTabIndex(1)}
             className={`py-2 text-xs font-bold rounded-lg transition-all ${
               tabIndex === 1
-                ? "bg-[#75D7FF] text-[#08090D] shadow-md shadow-[#75D7FF]/20"
-                : "text-[#A4ADBA] hover:text-[#F5F3EF]"
+                ? "bg-[#00695E] text-[#F7F6F1] shadow-md shadow-[#00695E]/20"
+                : "text-[#526460] hover:text-[#192D2A]"
             }`}
           >
             Individual Student Mapping
@@ -295,18 +294,18 @@ function EnrollStudentDialog({ open, onClose, directories }) {
 
         {tabIndex === 0 ? (
           <div className="space-y-3.5">
-            <p className="text-xs text-[#A4ADBA]">
+            <p className="text-xs text-[#526460]">
               Enrolls all eligible students in the selected department into matching semester subjects automatically.
             </p>
 
             {/* Department | Target Semester | Academic Year */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Department</label>
+                <label className="block text-xs font-semibold text-[#526460] mb-1">Department</label>
                 <select
                   value={batchForm.department}
                   onChange={(e) => setBatchForm((f) => ({ ...f, department: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+                  className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
                 >
                   <option value="CSE">Computer Science (CSE)</option>
                   <option value="ECE">Electronics (ECE)</option>
@@ -314,11 +313,11 @@ function EnrollStudentDialog({ open, onClose, directories }) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Target Semester</label>
+                <label className="block text-xs font-semibold text-[#526460] mb-1">Target Semester</label>
                 <select
                   value={batchForm.semester}
                   onChange={(e) => setBatchForm((f) => ({ ...f, semester: Number(e.target.value) }))}
-                  className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+                  className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
                 >
                   {SEMESTER_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -329,31 +328,31 @@ function EnrollStudentDialog({ open, onClose, directories }) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Academic Year</label>
+                <label className="block text-xs font-semibold text-[#526460] mb-1">Academic Year</label>
                 <input aria-label="Academic year" required pattern="[0-9]{4}-[0-9]{4}"
                   value={batchForm.academicYear}
                   onChange={(e) => setBatchForm((f) => ({ ...f, academicYear: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+                  className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
                  />
               </div>
             </div>
 
             {batchMutation.isError && (
-              <div className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#FDA4AF] text-xs">
+              <div role="alert" className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#993F37] text-xs">
                 {getErrorMessage(batchMutation.error)}
               </div>
             )}
             {batchMutation.isSuccess && (
-              <div className="p-3 rounded-xl bg-[#10B981]/15 border border-[#10B981]/30 text-[#6EE7B7] text-xs space-y-1">
+              <div role="status" className="p-3 rounded-xl bg-[#10B981]/15 border border-[#10B981]/30 text-[#356046] text-xs space-y-1">
                 <div className="flex items-center gap-2 font-bold">
                   <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                   <span>{batchMutation.data?.data?.message || batchMutation.data?.message || "Batch enrollment completed successfully."}</span>
                 </div>
                 {batchMutation.data?.data && (
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[#A4ADBA] pt-1 border-t border-[#10B981]/20">
-                    <span>Enrolled: <strong className="text-[#6EE7B7]">{batchMutation.data.data.successful ?? batchMutation.data.data.totalEnrollments ?? 0}</strong></span>
-                    <span>Skipped (Already Enrolled): <strong className="text-[#F5F3EF]">{batchMutation.data.data.skipped ?? 0}</strong></span>
-                    <span>Failed: <strong className="text-[#FDA4AF]">{batchMutation.data.data.failed ?? 0}</strong></span>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[#526460] pt-1 border-t border-[#10B981]/20">
+                    <span>Enrolled: <strong className="text-[#356046]">{batchMutation.data.data.successful ?? batchMutation.data.data.totalEnrollments ?? 0}</strong></span>
+                    <span>Skipped (Already Enrolled): <strong className="text-[#192D2A]">{batchMutation.data.data.skipped ?? 0}</strong></span>
+                    <span>Failed: <strong className="text-[#993F37]">{batchMutation.data.data.failed ?? 0}</strong></span>
                   </div>
                 )}
               </div>
@@ -362,11 +361,11 @@ function EnrollStudentDialog({ open, onClose, directories }) {
         ) : (
           <div className="space-y-3.5">
             <div>
-              <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Select Student</label>
+              <label className="block text-xs font-semibold text-[#526460] mb-1">Select Student</label>
               <select
                 value={indivForm.studentId}
                 onChange={(e) => setIndivForm((f) => ({ ...f, studentId: e.target.value }))}
-                className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+                className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
               >
                 <option value="">-- Choose Student Candidate --</option>
                 {studentsList.map((st) => (
@@ -379,19 +378,19 @@ function EnrollStudentDialog({ open, onClose, directories }) {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Academic Year</label>
+                <label className="block text-xs font-semibold text-[#526460] mb-1">Academic Year</label>
                 <input aria-label="Academic year" required pattern="[0-9]{4}-[0-9]{4}"
                   value={indivForm.academicYear}
                   onChange={(e) => setIndivForm((f) => ({ ...f, academicYear: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+                  className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
                  />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Target Semester</label>
+                <label className="block text-xs font-semibold text-[#526460] mb-1">Target Semester</label>
                 <select
                   value={indivForm.semester}
                   onChange={(e) => setIndivForm((f) => ({ ...f, semester: Number(e.target.value) }))}
-                  className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+                  className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
                 >
                   {SEMESTER_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -403,44 +402,37 @@ function EnrollStudentDialog({ open, onClose, directories }) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Select Subjects to Enroll</label>
-              <div className="max-h-40 overflow-y-auto space-y-1.5 p-2 bg-[#191E28]/50 border border-[#292F3B] rounded-xl">
+              <label className="block text-xs font-semibold text-[#526460] mb-1">Select Subjects to Enroll</label>
+              <div className="max-h-40 overflow-y-auto space-y-1.5 p-2 bg-[#F2F5F2]/50 border border-[#C9D4CE] rounded-xl">
                 {subjectsList.map((sub) => {
                   const isChecked = indivForm.subjectIds.includes(sub._id);
                   return (
-                    <div
+                    <label
                       key={sub._id}
-                      onClick={() => toggleSubjectSelect(sub._id)}
                       className={`flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition-colors ${
                         isChecked
-                          ? "bg-[#75D7FF]/15 border border-[#75D7FF]/30 text-[#75D7FF]"
-                          : "hover:bg-white/5 text-[#A4ADBA]"
+                          ? "bg-[#00695E]/15 border border-[#00695E]/30 text-[#00695E]"
+                          : "hover:bg-white/5 text-[#526460]"
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <div
-                          className={`w-4 h-4 rounded flex items-center justify-center border ${
-                            isChecked ? "bg-[#75D7FF] border-[#75D7FF] text-[#08090D]" : "border-[#292F3B]"
-                          }`}
-                        >
-                          {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
-                        </div>
-                        <span className="font-semibold text-[#F5F3EF]">{sub.code}</span>
-                        <span className="truncate max-w-[180px] text-[#A4ADBA]">{sub.name}</span>
+                        <input type="checkbox" checked={isChecked} onChange={() => toggleSubjectSelect(sub._id)} />
+                        <span className="font-semibold text-[#192D2A]">{sub.code}</span>
+                        <span className="truncate max-w-[180px] text-[#526460]">{sub.name}</span>
                       </div>
-                    </div>
+                    </label>
                   );
                 })}
               </div>
             </div>
 
             {indivMutation.isError && (
-              <div className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#FDA4AF] text-xs">
+              <div role="alert" className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#993F37] text-xs">
                 {getErrorMessage(indivMutation.error)}
               </div>
             )}
             {indivMutation.isSuccess && (
-              <div className="p-3 rounded-xl bg-[#10B981]/15 border border-[#10B981]/30 text-[#6EE7B7] text-xs flex items-center gap-2">
+              <div role="status" className="p-3 rounded-xl bg-[#10B981]/15 border border-[#10B981]/30 text-[#356046] text-xs flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Student enrolled in subjects successfully.</span>
               </div>
@@ -448,11 +440,11 @@ function EnrollStudentDialog({ open, onClose, directories }) {
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-3 border-t border-[#292F3B]">
+        <div className="flex justify-end gap-3 pt-3 border-t border-[#C9D4CE]">
           <button
             type="button"
             onClick={handleClose}
-            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#A4ADBA] hover:text-[#F5F3EF]"
+            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#526460] hover:text-[#192D2A]"
           >
             Close
           </button>
@@ -461,7 +453,7 @@ function EnrollStudentDialog({ open, onClose, directories }) {
               type="button"
               onClick={() => batchMutation.mutate()}
               disabled={batchMutation.isPending || !batchForm.department || !batchForm.academicYear}
-              className="px-5 py-2 text-xs font-bold rounded-xl bg-[#75D7FF] hover:bg-[#A8E7FF] text-[#08090D] shadow-md shadow-[#75D7FF]/20 disabled:opacity-50"
+              className="px-5 py-2 text-xs font-bold rounded-xl bg-[#00695E] hover:bg-[#00554D] text-[#F7F6F1] shadow-md shadow-[#00695E]/20 disabled:opacity-50"
             >
               {batchMutation.isPending ? "Processing..." : "Run Batch Enrollment"}
             </button>
@@ -475,7 +467,7 @@ function EnrollStudentDialog({ open, onClose, directories }) {
                 indivForm.subjectIds.length === 0 ||
                 !indivForm.academicYear
               }
-              className="px-5 py-2 text-xs font-bold rounded-xl bg-[#75D7FF] hover:bg-[#A8E7FF] text-[#08090D] shadow-md shadow-[#75D7FF]/20 disabled:opacity-50"
+              className="px-5 py-2 text-xs font-bold rounded-xl bg-[#00695E] hover:bg-[#00554D] text-[#F7F6F1] shadow-md shadow-[#00695E]/20 disabled:opacity-50"
             >
               {indivMutation.isPending ? "Enrolling..." : "Enroll Student"}
             </button>
@@ -487,25 +479,27 @@ function EnrollStudentDialog({ open, onClose, directories }) {
 }
 
 // 3. Assign Faculty Dialog
-function AssignFacultyDialog({ open, onClose, directories }) {
+function AssignFacultyDialog({ onClose, directories, onSaved, onCatalogue }) {
   const queryClient = useQueryClient();
+  const { currentSession } = directories;
+  const semesters = SEMESTER_OPTIONS.filter((option) => currentSession.activeSemesters.includes(option.value));
   const [form, setForm] = useState({
     facultyId: "",
     subjectIds: [],
-    academicYear: directories?.currentSession?.academicYear || ACTIVE_ACADEMIC_YEAR,
-    semester: 3,
+    semester: semesters[0]?.value,
     section: "A",
     department: "CSE",
     program: "B.Tech",
   });
   const [subjectSearch, setSubjectSearch] = useState("");
 
-  const facultyList = directories?.faculty || [];
+  const facultyList = directories.faculty || [];
 
   const filteredSubjects = useMemo(() => {
-    const list = directories?.subjects || [];
+    const list = directories.subjects || [];
     const q = subjectSearch.toLowerCase().trim();
     return list.filter((sub) => {
+      if (sub.allowedSemesters?.length && !sub.allowedSemesters.includes(form.semester)) return false;
       if (!q) return true;
       return (
         sub.name?.toLowerCase().includes(q) ||
@@ -513,7 +507,7 @@ function AssignFacultyDialog({ open, onClose, directories }) {
         sub.department?.toLowerCase().includes(q)
       );
     });
-  }, [directories?.subjects, subjectSearch]);
+  }, [directories.subjects, subjectSearch, form.semester]);
 
   const toggleSubjectSelect = (subId) => {
     setForm((f) => ({
@@ -541,34 +535,23 @@ function AssignFacultyDialog({ open, onClose, directories }) {
       assignFacultyToSubject({
         facultyId: form.facultyId,
         subjectIds: form.subjectIds,
-        academicYear: form.academicYear,
+        academicYear: currentSession.academicYear,
         semester: Number(form.semester),
         section: form.section || "A",
         department: form.department || "CSE",
         program: form.program || "B.Tech",
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-directories"] }),
+    onSuccess: async (response) => {
+      await queryClient.invalidateQueries({ queryKey: ["admin-directories"] });
+      const saved = response.data.data;
+      onSaved(form, Array.isArray(saved) ? saved.length : 1);
+    },
   });
-
-  const handleClose = () => {
-    mutation.reset();
-    setForm({
-      facultyId: "",
-      subjectIds: [],
-      academicYear: directories?.currentSession?.academicYear || ACTIVE_ACADEMIC_YEAR,
-      semester: 3,
-      section: "A",
-      department: "CSE",
-      program: "B.Tech",
-    });
-    setSubjectSearch("");
-    onClose();
-  };
 
   return (
     <ModalWrapper
-      open={open}
-      onClose={handleClose}
+      open
+      onClose={onClose}
       title="Assign Faculty to Course Offerings"
       subtitle="Map instructor to one or more semester course offerings"
       icon={UserCheck}
@@ -581,12 +564,12 @@ function AssignFacultyDialog({ open, onClose, directories }) {
         className="space-y-4"
       >
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">
-            Select Faculty Member <span className="text-[#FF3D9A]">*</span>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">
+            Select Faculty Member <span className="text-[#00695E]">*</span>
           </label>
           <select
             required
-            value={form.facultyId}
+            aria-label="Faculty member" value={form.facultyId}
             onChange={(e) => {
               const fac = facultyList.find((f) => f._id === e.target.value);
               setForm((f) => ({
@@ -595,7 +578,7 @@ function AssignFacultyDialog({ open, onClose, directories }) {
                 department: fac?.department || f.department,
               }));
             }}
-            className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           >
             <option value="">-- Choose Instructor --</option>
             {facultyList.map((fac) => (
@@ -608,25 +591,27 @@ function AssignFacultyDialog({ open, onClose, directories }) {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">
-              Academic Year <span className="text-[#FF3D9A]">*</span>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">
+              Academic Year <span className="text-[#00695E]">*</span>
             </label>
-            <input aria-label="Academic year" required pattern="[0-9]{4}-[0-9]{4}"
-              value={form.academicYear}
-              onChange={(e) => setForm((f) => ({ ...f, academicYear: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            <input aria-label="Academic year" readOnly value={currentSession.academicYear}
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
              />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">
-              Target Semester <span className="text-[#FF3D9A]">*</span>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">
+              Target Semester <span className="text-[#00695E]">*</span>
             </label>
             <select
+              aria-label="Target semester"
               value={form.semester}
-              onChange={(e) => setForm((f) => ({ ...f, semester: Number(e.target.value) }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              onChange={(e) => {
+                mutation.reset();
+                setForm((f) => ({ ...f, semester: Number(e.target.value), subjectIds: [] }));
+              }}
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             >
-              {SEMESTER_OPTIONS.map((opt) => (
+              {semesters.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
@@ -637,32 +622,32 @@ function AssignFacultyDialog({ open, onClose, directories }) {
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Section</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Section</label>
             <input
               type="text"
-              value={form.section}
+              aria-label="Section" value={form.section}
               onChange={(e) => setForm((f) => ({ ...f, section: e.target.value.toUpperCase() }))}
               placeholder="e.g. A"
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Department</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Department</label>
             <select
-              value={form.department}
+              aria-label="Department" value={form.department}
               onChange={(e) => setForm((f) => ({ ...f, department: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             >
               <option value="CSE">CSE</option>
               <option value="ECE">ECE</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Program</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Program</label>
             <select
-              value={form.program}
+              aria-label="Program" value={form.program}
               onChange={(e) => setForm((f) => ({ ...f, program: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             >
               <option value="B.Tech">B.Tech</option>
               <option value="M.Tech">M.Tech</option>
@@ -672,23 +657,23 @@ function AssignFacultyDialog({ open, onClose, directories }) {
 
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-semibold text-[#A4ADBA]">
+            <label className="text-xs font-semibold text-[#526460]">
               Select Courses to Assign ({form.subjectIds.length} selected){" "}
-              <span className="text-[#FF3D9A]">*</span>
+              <span className="text-[#00695E]">*</span>
             </label>
             <div className="flex items-center gap-2 text-[11px]">
               <button
                 type="button"
                 onClick={selectAllFiltered}
-                className="text-[#75D7FF] hover:underline"
+                className="text-[#00695E] hover:underline"
               >
                 Select All
               </button>
-              <span className="text-[#292F3B]">•</span>
+              <span className="text-[#C9D4CE]">•</span>
               <button
                 type="button"
                 onClick={clearSelected}
-                className="text-[#A4ADBA] hover:text-[#F5F3EF]"
+                className="text-[#526460] hover:text-[#192D2A]"
               >
                 Clear
               </button>
@@ -696,81 +681,64 @@ function AssignFacultyDialog({ open, onClose, directories }) {
           </div>
 
           <div className="relative mb-2">
-            <Search className="w-3.5 h-3.5 text-[#A4ADBA] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-[#526460] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
-              placeholder="Filter course catalogue..."
+              aria-label="Filter course catalogue" placeholder="Filter course catalogue..."
               value={subjectSearch}
               onChange={(e) => setSubjectSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             />
           </div>
 
-          <div className="max-h-48 overflow-y-auto space-y-1.5 p-2 bg-[#191E28]/50 border border-[#292F3B] rounded-xl">
+          <div className="max-h-48 overflow-y-auto space-y-1.5 p-2 bg-[#F2F5F2]/50 border border-[#C9D4CE] rounded-xl">
             {filteredSubjects.map((sub) => {
               const isChecked = form.subjectIds.includes(sub._id);
               return (
-                <div
+                <label
                   key={sub._id}
-                  onClick={() => toggleSubjectSelect(sub._id)}
                   className={`flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition-colors ${
                     isChecked
-                      ? "bg-[#75D7FF]/15 border border-[#75D7FF]/30 text-[#75D7FF]"
-                      : "hover:bg-white/5 text-[#A4ADBA]"
+                      ? "bg-[#00695E]/15 border border-[#00695E]/30 text-[#00695E]"
+                      : "hover:bg-white/5 text-[#526460]"
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <div
-                      className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${
-                        isChecked
-                          ? "bg-[#75D7FF] border-[#75D7FF] text-[#08090D]"
-                          : "border-[#292F3B]"
-                      }`}
-                    >
-                      {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
-                    </div>
-                    <span className="font-semibold text-[#F5F3EF]">{sub.code}</span>
-                    <span className="truncate max-w-[220px] text-[#A4ADBA]">{sub.name}</span>
+                    <input type="checkbox" checked={isChecked} onChange={() => toggleSubjectSelect(sub._id)} />
+                    <span className="font-semibold text-[#192D2A]">{sub.code}</span>
+                    <span className="truncate max-w-[220px] text-[#526460]">{sub.name}</span>
                   </div>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#191E28] border border-[#292F3B] text-[#A4ADBA] shrink-0">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F2F5F2] border border-[#C9D4CE] text-[#526460] shrink-0">
                     {sub.department}
                   </span>
-                </div>
+                </label>
               );
             })}
             {filteredSubjects.length === 0 && (
-              <p className="text-center py-4 text-xs text-[#A4ADBA]">No courses match filter.</p>
+              <p className="text-center py-4 text-xs text-[#526460]">{subjectSearch.trim() ? "No matching courses for this semester." : "No courses in the catalogue are offered in this semester."}</p>
             )}
           </div>
         </div>
 
+        {filteredSubjects.length === 0 && !subjectSearch.trim() && <button type="button" onClick={onCatalogue} className="underline">Review course catalogue</button>}
         {mutation.isError && (
-          <div className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#FDA4AF] text-xs">
+          <div role="alert" className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#993F37] text-xs">
             {getErrorMessage(mutation.error)}
           </div>
         )}
-        {mutation.isSuccess && (
-          <div className="p-3 rounded-xl bg-[#10B981]/15 border border-[#10B981]/30 text-[#6EE7B7] text-xs flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>
-              {mutation.data?.data?.message ||
-                `Teaching assignment successfully created for ${form.subjectIds.length} course(s)!`}
-            </span>
-          </div>
-        )}
-
-        <div className="flex justify-end gap-3 pt-3 border-t border-[#292F3B]">
+        <p className="text-sm">{form.subjectIds.length} selected · Semester {form.semester} · Section {form.section.trim() || "A"}</p>
+        <div className="admin-submit flex justify-end gap-3 pt-3 border-t border-[#C9D4CE]">
           <button
             type="button"
-            onClick={handleClose}
-            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#A4ADBA] hover:text-[#F5F3EF]"
+            onClick={onClose}
+            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#526460] hover:text-[#192D2A]"
           >
             Close
           </button>
           <button
             type="submit"
             disabled={mutation.isPending || !form.facultyId || form.subjectIds.length === 0}
-            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#75D7FF] hover:bg-[#A8E7FF] text-[#08090D] shadow-md shadow-[#75D7FF]/20 disabled:opacity-50"
+            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#00695E] hover:bg-[#00554D] text-[#F7F6F1] shadow-md shadow-[#00695E]/20 disabled:opacity-50"
           >
             {mutation.isPending ? "Assigning..." : `Assign Faculty (${form.subjectIds.length})`}
           </button>
@@ -822,22 +790,22 @@ function CreateSubjectDialog({ open, onClose }) {
       >
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Subject Code</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Subject Code</label>
             <input
               type="text"
               required
               placeholder="e.g. CS302"
               value={form.code}
               onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Department</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Department</label>
             <select
               value={form.department}
               onChange={(e) => setForm((f) => ({ ...f, department: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             >
               <option value="CSE">CSE</option>
               <option value="ECE">ECE</option>
@@ -846,23 +814,23 @@ function CreateSubjectDialog({ open, onClose }) {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Subject Title</label>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">Subject Title</label>
           <input
             type="text"
             required
             placeholder="e.g. Computer Networks & Protocols"
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Curriculum Semester</label>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">Curriculum Semester</label>
           <select
             value={form.semester}
             onChange={(e) => setForm((f) => ({ ...f, semester: Number(e.target.value) }))}
-            className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           >
             {SEMESTER_OPTIONS.map((s) => (
               <option key={s.value} value={s.value}>
@@ -873,23 +841,23 @@ function CreateSubjectDialog({ open, onClose }) {
         </div>
 
         {mutation.isError && (
-          <div className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#FDA4AF] text-xs">
+          <div role="alert" className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#993F37] text-xs">
             {getErrorMessage(mutation.error)}
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-3 border-t border-[#292F3B]">
+        <div className="flex justify-end gap-3 pt-3 border-t border-[#C9D4CE]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#A4ADBA] hover:text-[#F5F3EF]"
+            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#526460] hover:text-[#192D2A]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#75D7FF] hover:bg-[#A8E7FF] text-[#08090D] shadow-md shadow-[#75D7FF]/20"
+            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#00695E] hover:bg-[#00554D] text-[#F7F6F1] shadow-md shadow-[#00695E]/20"
           >
             {mutation.isPending ? "Creating..." : "Create Subject"}
           </button>
@@ -934,72 +902,72 @@ function CreateFacultyDialog({ open, onClose }) {
         className="space-y-3.5"
       >
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Faculty Name</label>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">Faculty Name</label>
           <input
             type="text"
             required
             placeholder="e.g. Dr. Alan Turing"
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Email</label>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">Email</label>
           <input
             type="email"
             required
             placeholder="instructor@acadpro.edu"
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           />
         </div>
 
-        <p className="text-sm text-[#A4ADBA]">The instructor will receive an email invitation to choose their password.</p>
+        <p className="text-sm text-[#526460]">The instructor will receive an email invitation to choose their password.</p>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Department</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Department</label>
             <select
               value={form.department}
               onChange={(e) => setForm((f) => ({ ...f, department: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             >
               <option value="CSE">CSE</option>
               <option value="ECE">ECE</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Designation</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Designation</label>
             <input
               type="text"
               value={form.designation}
               onChange={(e) => setForm((f) => ({ ...f, designation: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             />
           </div>
         </div>
 
         {mutation.isError && (
-          <div className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#FDA4AF] text-xs">
+          <div role="alert" className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#993F37] text-xs">
             {getErrorMessage(mutation.error)}
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-3 border-t border-[#292F3B]">
+        <div className="flex justify-end gap-3 pt-3 border-t border-[#C9D4CE]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#A4ADBA] hover:text-[#F5F3EF]"
+            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#526460] hover:text-[#192D2A]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#75D7FF] hover:bg-[#A8E7FF] text-[#08090D] shadow-md shadow-[#75D7FF]/20"
+            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#00695E] hover:bg-[#00554D] text-[#F7F6F1] shadow-md shadow-[#00695E]/20"
           >
             {mutation.isPending ? "Creating..." : "Create Account"}
           </button>
@@ -1071,12 +1039,12 @@ function PromoteStudentDialog({ open, onClose, directories }) {
         className="space-y-3.5"
       >
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Select Student</label>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">Select Student</label>
           <select
             required
             aria-label="Select student" value={form.studentId}
             onChange={(e) => handleStudentSelect(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           >
             <option value="">-- Choose Student --</option>
             {studentsList.map((st) => (
@@ -1088,16 +1056,16 @@ function PromoteStudentDialog({ open, onClose, directories }) {
         </div>
 
         {selectedStudent && (
-          <div className="p-3 rounded-xl bg-[#191E28]/60 border border-[#292F3B] text-xs space-y-1">
+          <div className="p-3 rounded-xl bg-[#F2F5F2]/60 border border-[#C9D4CE] text-xs space-y-1">
             <div className="flex justify-between">
-              <span className="text-[#A4ADBA]">Current Placement:</span>
-              <span className="font-semibold text-[#F5F3EF]">
+              <span className="text-[#526460]">Current Placement:</span>
+              <span className="font-semibold text-[#192D2A]">
                 Year {selectedStudent.year} • Semester {selectedStudent.currentSemester || (selectedStudent.year - 1) * 2 + 1}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#A4ADBA]">Department & Program:</span>
-              <span className="font-mono text-[#75D7FF]">
+              <span className="text-[#526460]">Department & Program:</span>
+              <span className="font-mono text-[#00695E]">
                 {selectedStudent.department} (B.Tech)
               </span>
             </div>
@@ -1105,8 +1073,8 @@ function PromoteStudentDialog({ open, onClose, directories }) {
         )}
 
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">
-            Target Progression Semester <span className="text-[#FF3D9A]">*</span>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">
+            Target Progression Semester <span className="text-[#00695E]">*</span>
           </label>
           <select
             aria-label="Target semester" value={form.newSemester}
@@ -1118,7 +1086,7 @@ function PromoteStudentDialog({ open, onClose, directories }) {
                 newYear: Math.ceil(sem / 2),
               }));
             }}
-            className="w-full px-3 py-2.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3 py-2.5 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           >
             {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => {
               const currentSem = selectedStudent
@@ -1136,47 +1104,47 @@ function PromoteStudentDialog({ open, onClose, directories }) {
               );
             })}
           </select>
-          <p className="text-[11px] text-[#A4ADBA] mt-1">
-            Target Year: <span className="font-semibold text-[#75D7FF]">Year {form.newYear}</span> (Semester {form.newSemester})
+          <p className="text-[11px] text-[#526460] mt-1">
+            Target Year: <span className="font-semibold text-[#00695E]">Year {form.newYear}</span> (Semester {form.newSemester})
           </p>
         </div>
 
-        {preview.data && <p role="status" className="text-sm text-[#75D7FF]">
+        {preview.data && <p role="status" className="text-sm text-[#00695E]">
           Archive {preview.data.transitionedOldEnrollments} enrollments. Add {preview.data.enrollments.created}.
           Courses: {preview.data.enrollments.courses.map(c => c.code).join(", ")}.
         </p>}
         {preview.isError && <p role="alert">{getErrorMessage(preview.error)}</p>}
         {mutation.isError && (
-          <div className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#FDA4AF] text-xs">
+          <div role="alert" className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#993F37] text-xs">
             {getErrorMessage(mutation.error)}
           </div>
         )}
         {mutation.isSuccess && (
-          <div className="p-3 rounded-xl bg-[#10B981]/15 border border-[#10B981]/30 text-[#6EE7B7] text-xs space-y-1">
+          <div role="status" className="p-3 rounded-xl bg-[#10B981]/15 border border-[#10B981]/30 text-[#356046] text-xs space-y-1">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
               <span className="font-semibold">Student promoted & courses synchronized!</span>
             </div>
             {mutation.data?.data?.enrollments?.courses?.length > 0 && (
-              <p className="text-[11px] text-[#A4ADBA]">
+              <p className="text-[11px] text-[#526460]">
                 Assigned courses: {mutation.data.data.enrollments.courses.map((c) => c.code).join(", ")}
               </p>
             )}
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-3 border-t border-[#292F3B]">
+        <div className="flex justify-end gap-3 pt-3 border-t border-[#C9D4CE]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#A4ADBA] hover:text-[#F5F3EF]"
+            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#526460] hover:text-[#192D2A]"
           >
             Close
           </button>
           <button
             type="submit"
             disabled={mutation.isPending || !preview.isSuccess}
-            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#FF3D9A] hover:bg-[#FF66AE] text-black shadow-md shadow-[#FF3D9A]/20 cursor-pointer disabled:opacity-40"
+            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#00695E] hover:bg-[#FF66AE] text-black shadow-md shadow-[#00695E]/20 cursor-pointer disabled:opacity-40"
           >
             {mutation.isPending ? "Promoting & Enrolling..." : "Promote Student"}
           </button>
@@ -1236,33 +1204,33 @@ function EditStudentDialog({ student, onClose }) {
         className="space-y-3.5"
       >
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Full Name</label>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">Full Name</label>
           <input
             type="text"
             required
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">MIS / ID</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">MIS / ID</label>
             <input
               type="text"
               required
               value={form.mis}
               onChange={(e) => setForm((f) => ({ ...f, mis: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs font-mono text-[#75D7FF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs font-mono text-[#00695E] focus:outline-none focus:border-[#00695E]"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Department</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Department</label>
             <select
               value={form.department}
               onChange={(e) => setForm((f) => ({ ...f, department: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             >
               <option value="CSE">CSE</option>
               <option value="ECE">ECE</option>
@@ -1271,19 +1239,19 @@ function EditStudentDialog({ student, onClose }) {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Email</label>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">Email</label>
           <input
             type="email"
             required
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Academic Year</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Academic Year</label>
             <select
               value={form.year}
               onChange={(e) => {
@@ -1294,7 +1262,7 @@ function EditStudentDialog({ student, onClose }) {
                   currentSemester: (y - 1) * 2 + 1,
                 }));
               }}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             >
               {[1, 2, 3, 4].map((yr) => (
                 <option key={yr} value={yr}>
@@ -1304,7 +1272,7 @@ function EditStudentDialog({ student, onClose }) {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Current Semester</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Current Semester</label>
             <select
               value={form.currentSemester}
               onChange={(e) => {
@@ -1315,7 +1283,7 @@ function EditStudentDialog({ student, onClose }) {
                   year: Math.ceil(s / 2),
                 }));
               }}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             >
               {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
                 <option key={s} value={s}>
@@ -1327,36 +1295,36 @@ function EditStudentDialog({ student, onClose }) {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">
-            Reset Password <span className="text-[10px] text-[#A4ADBA] font-normal">(Leave blank to keep unchanged)</span>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">
+            Reset Password <span className="text-[10px] text-[#526460] font-normal">(Leave blank to keep unchanged)</span>
           </label>
           <input
             type="password"
             placeholder="Min 6 characters to reset"
             value={form.password}
             onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           />
         </div>
 
         {mutation.isError && (
-          <div className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#FDA4AF] text-xs">
+          <div role="alert" className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#993F37] text-xs">
             {getErrorMessage(mutation.error)}
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-3 border-t border-[#292F3B]">
+        <div className="flex justify-end gap-3 pt-3 border-t border-[#C9D4CE]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#A4ADBA] hover:text-[#F5F3EF]"
+            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#526460] hover:text-[#192D2A]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#75D7FF] hover:bg-[#A8E7FF] text-[#08090D] shadow-md shadow-[#75D7FF]/20"
+            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#00695E] hover:bg-[#00554D] text-[#F7F6F1] shadow-md shadow-[#00695E]/20"
           >
             {mutation.isPending ? "Saving Changes..." : "Save Student"}
           </button>
@@ -1422,138 +1390,138 @@ function EditFacultyDialog({ faculty, onClose }) {
         className="space-y-3.5"
       >
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Faculty Name</label>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">Faculty Name</label>
           <input
             type="text"
             required
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Email Address</label>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">Email Address</label>
           <input
             type="email"
             required
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Department</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Department</label>
             <select
               value={form.department}
               onChange={(e) => setForm((f) => ({ ...f, department: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             >
               <option value="CSE">CSE</option>
               <option value="ECE">ECE</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Designation</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Designation</label>
             <input
               type="text"
               value={form.designation}
               onChange={(e) => setForm((f) => ({ ...f, designation: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Specialization</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Specialization</label>
             <input
               type="text"
               placeholder="e.g. Machine Learning, VLSI"
               value={form.specialization}
               onChange={(e) => setForm((f) => ({ ...f, specialization: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Phone Number</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Phone Number</label>
             <input
               type="text"
               placeholder="+91 (020) ..."
               value={form.phone}
               onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Office Location</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Office Location</label>
             <input
               type="text"
               placeholder="e.g. Block B, Room 304"
               value={form.officeLocation}
               onChange={(e) => setForm((f) => ({ ...f, officeLocation: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Office Hours</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Office Hours</label>
             <input
               type="text"
               placeholder="e.g. Mon/Wed 2-4 PM"
               value={form.officeHours}
               onChange={(e) => setForm((f) => ({ ...f, officeHours: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Avatar Picture URL</label>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">Avatar Picture URL</label>
           <input
             type="url"
             placeholder="https://..."
             value={form.avatar}
             onChange={(e) => setForm((f) => ({ ...f, avatar: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">
-            Reset Password <span className="text-[10px] text-[#A4ADBA] font-normal">(Leave blank to keep unchanged)</span>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">
+            Reset Password <span className="text-[10px] text-[#526460] font-normal">(Leave blank to keep unchanged)</span>
           </label>
           <input
             type="password"
             placeholder="Min 6 characters to reset"
             value={form.password}
             onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           />
         </div>
 
         {mutation.isError && (
-          <div className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#FDA4AF] text-xs">
+          <div role="alert" className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#993F37] text-xs">
             {getErrorMessage(mutation.error)}
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-3 border-t border-[#292F3B]">
+        <div className="flex justify-end gap-3 pt-3 border-t border-[#C9D4CE]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#A4ADBA] hover:text-[#F5F3EF]"
+            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#526460] hover:text-[#192D2A]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#75D7FF] hover:bg-[#A8E7FF] text-[#08090D] shadow-md shadow-[#75D7FF]/20"
+            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#00695E] hover:bg-[#00554D] text-[#F7F6F1] shadow-md shadow-[#00695E]/20"
           >
             {mutation.isPending ? "Saving Changes..." : "Save Faculty"}
           </button>
@@ -1612,21 +1580,21 @@ function EditSubjectDialog({ subject, onClose }) {
       >
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Subject Code</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Subject Code</label>
             <input
               type="text"
               required
               value={form.code}
               onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs font-mono text-[#75D7FF] uppercase focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs font-mono text-[#00695E] uppercase focus:outline-none focus:border-[#00695E]"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Department</label>
+            <label className="block text-xs font-semibold text-[#526460] mb-1">Department</label>
             <select
               value={form.department}
               onChange={(e) => setForm((f) => ({ ...f, department: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+              className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
             >
               <option value="CSE">CSE</option>
               <option value="ECE">ECE</option>
@@ -1635,22 +1603,22 @@ function EditSubjectDialog({ subject, onClose }) {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Subject Title</label>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">Subject Title</label>
           <input
             type="text"
             required
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Curriculum Semester</label>
+          <label className="block text-xs font-semibold text-[#526460] mb-1">Curriculum Semester</label>
           <select
             value={form.semester}
             onChange={(e) => setForm((f) => ({ ...f, semester: Number(e.target.value) }))}
-            className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+            className="w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
           >
             {SEMESTER_OPTIONS.map((s) => (
               <option key={s.value} value={s.value}>
@@ -1661,23 +1629,23 @@ function EditSubjectDialog({ subject, onClose }) {
         </div>
 
         {mutation.isError && (
-          <div className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#FDA4AF] text-xs">
+          <div role="alert" className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#993F37] text-xs">
             {getErrorMessage(mutation.error)}
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-3 border-t border-[#292F3B]">
+        <div className="flex justify-end gap-3 pt-3 border-t border-[#C9D4CE]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#A4ADBA] hover:text-[#F5F3EF]"
+            className="px-4 py-2 text-xs font-semibold rounded-xl text-[#526460] hover:text-[#192D2A]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#75D7FF] hover:bg-[#A8E7FF] text-[#08090D] shadow-md shadow-[#75D7FF]/20"
+            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#00695E] hover:bg-[#00554D] text-[#F7F6F1] shadow-md shadow-[#00695E]/20"
           >
             {mutation.isPending ? "Saving Changes..." : "Save Subject"}
           </button>
@@ -1771,14 +1739,6 @@ export default function AdminDashboard() {
     },
   });
 
-
-  // Metrics
-  const assignedSubjectIds = new Set(
-    assignmentsList.map((a) => (typeof a.subjectId === "object" ? a.subjectId?._id : a.subjectId))
-  );
-  const courseAllocationRate = subjectsList.length
-    ? Math.round((assignedSubjectIds.size / subjectsList.length) * 100)
-    : 100;
 
   // Filtered Directory Data
   const filteredSemesters = useMemo(() => {
@@ -1880,6 +1840,16 @@ export default function AdminDashboard() {
   }, [subjectRequestsList, searchQuery, departmentFilter]);
 
 
+  const [assignmentNotice, setAssignmentNotice] = useState("");
+  const directoryRef = useRef(null);
+  const showDirectory = (tab) => {
+    setActiveDirectoryTab(tab);
+    setSearchQuery("");
+    setDepartmentFilter("ALL");
+    setOpenDialog(null);
+    requestAnimationFrame(() => directoryRef.current?.focus());
+  };
+
   // JSON Export Handler
   const handleExportDirectory = () => {
     const exportData = {
@@ -1902,98 +1872,35 @@ export default function AdminDashboard() {
 
   return (
     <AppLayout
-      title="Central Administration Console"
+      title="Administration"
       subtitle="Campus directory, course allocations, student promotions & operational semesters"
       fullWidth
     >
-      <div className="space-y-8">
-        {/* Core Administrative Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 rounded-2xl bg-[#11141B] border border-[#292F3B] shadow-xl">
-            <div className="flex items-center justify-between text-xs text-[#A4ADBA] mb-2">
-              <span className="font-semibold uppercase tracking-wider text-[11px]">
-                Active Semesters
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-[#75D7FF]/15 text-[#75D7FF] flex items-center justify-center">
-                <Calendar className="w-4 h-4" />
-              </div>
-            </div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-[#F5F3EF] tracking-tight">
-              {semestersList.length}
-            </p>
-            <p className="text-xs text-[#10B981] mt-1 font-medium">
-              Operational Academic Blocks
-            </p>
+      <div className="admin-workspace space-y-6">
+        <section className="admin-overview">
+          <h1>Academic administration</h1>
+          <p>{directoriesQuery.isPending ? "Loading academic session…" : directoriesQuery.isError ? "Academic session unavailable" : directories.currentSession ? directories.currentSession.academicYear + " · " + directories.currentSession.termName : "Academic session awaits setup"}</p>
+          <div className="flex flex-wrap gap-3">
+            <button onClick={() => setOpenDialog("assign")}>Assign faculty</button>
+            <button onClick={() => showDirectory("requests")}>Review requests{directoriesQuery.data && " (" + subjectRequestsList.filter(r => r.status === "pending").length + " pending)"}</button>
           </div>
-
-          <div className="p-5 rounded-2xl bg-[#11141B] border border-[#292F3B] shadow-xl">
-            <div className="flex items-center justify-between text-xs text-[#A4ADBA] mb-2">
-              <span className="font-semibold uppercase tracking-wider text-[11px]">
-                Course Allocation
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-[#FF3D9A]/15 text-[#FF3D9A] flex items-center justify-center">
-                <CheckCircle2 className="w-4 h-4" />
-              </div>
-            </div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-[#F5F3EF] tracking-tight">
-              {courseAllocationRate}%
-            </p>
-            <p className="text-xs text-[#A4ADBA] mt-1 font-medium">
-              Faculty Mapped to Courses
-            </p>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-[#11141B] border border-[#292F3B] shadow-xl">
-            <div className="flex items-center justify-between text-xs text-[#A4ADBA] mb-2">
-              <span className="font-semibold uppercase tracking-wider text-[11px]">
-                Enrolled Students
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-[#75D7FF]/15 text-[#75D7FF] flex items-center justify-center">
-                <GraduationCap className="w-4 h-4" />
-              </div>
-            </div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-[#F5F3EF] tracking-tight">
-              {studentsList.length}
-            </p>
-            <p className="text-xs text-[#A4ADBA] mt-1 font-medium">
-              Active Institutional Scholars
-            </p>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-[#11141B] border border-[#292F3B] shadow-xl">
-            <div className="flex items-center justify-between text-xs text-[#A4ADBA] mb-2">
-              <span className="font-semibold uppercase tracking-wider text-[11px]">
-                Faculty Staff
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-[#FF3D9A]/15 text-[#FF3D9A] flex items-center justify-center">
-                <Users className="w-4 h-4" />
-              </div>
-            </div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-[#F5F3EF] tracking-tight">
-              {facultyList.length}
-            </p>
-            <p className="text-xs text-[#A4ADBA] mt-1 font-medium">
-              Instructors & Professors
-            </p>
-          </div>
-        </div>
-
+        </section>
         {/* Quick Operations Action Bar */}
-        <div className="p-5 rounded-2xl bg-[#11141B] border border-[#292F3B] shadow-xl space-y-4">
+        <div className="p-5 rounded-2xl bg-[#FFFFFF] border border-[#C9D4CE] shadow-xl space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="text-sm font-bold text-[#F5F3EF]">
-                Administrative Quick Actions
+              <h3 className="text-sm font-bold text-[#192D2A]">
+                Directory actions
               </h3>
-              <p className="text-xs text-[#A4ADBA]">
-                Launch operational dialogs for course mappings, promotions, and provisioning
+              <p className="text-xs text-[#526460]">
+                Manage courses, enrollments and people
               </p>
             </div>
             <button
               onClick={handleExportDirectory}
-              className="px-3.5 py-1.5 rounded-xl bg-[#191E28] hover:bg-[#252C3B] text-[#F5F3EF] border border-[#292F3B] text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl bg-[#F2F5F2] hover:bg-[#E2EEE7] text-[#192D2A] border border-[#C9D4CE] text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5 text-[#75D7FF]" />
+              <Download className="w-3.5 h-3.5 text-[#00695E]" />
               <span>Export JSON Directory</span>
             </button>
           </div>
@@ -2001,68 +1908,57 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <button
               onClick={() => setOpenDialog("semester")}
-              className="p-3 rounded-xl bg-[#191E28]/60 hover:bg-[#191E28] border border-[#292F3B] hover:border-[#75D7FF]/40 text-left transition-all cursor-pointer group"
+              className="p-3 rounded-xl bg-[#F2F5F2]/60 hover:bg-[#F2F5F2] border border-[#C9D4CE] hover:border-[#00695E]/40 text-left transition-all cursor-pointer group"
             >
-              <Calendar className="w-4 h-4 text-[#75D7FF] mb-2" />
-              <p className="text-xs font-bold text-[#F5F3EF] group-hover:text-[#75D7FF] transition-colors">
+              <Calendar className="w-4 h-4 text-[#00695E] mb-2" />
+              <p className="text-xs font-bold text-[#192D2A] group-hover:text-[#00695E] transition-colors">
                 New Semester
               </p>
-              <p className="text-[10px] text-[#A4ADBA]">Create block</p>
+              <p className="text-[10px] text-[#526460]">Create block</p>
             </button>
 
             <button
               onClick={() => setOpenDialog("enroll")}
-              className="p-3 rounded-xl bg-[#191E28]/60 hover:bg-[#191E28] border border-[#292F3B] hover:border-[#75D7FF]/40 text-left transition-all cursor-pointer group"
+              className="p-3 rounded-xl bg-[#F2F5F2]/60 hover:bg-[#F2F5F2] border border-[#C9D4CE] hover:border-[#00695E]/40 text-left transition-all cursor-pointer group"
             >
-              <GraduationCap className="w-4 h-4 text-[#75D7FF] mb-2" />
-              <p className="text-xs font-bold text-[#F5F3EF] group-hover:text-[#75D7FF] transition-colors">
+              <GraduationCap className="w-4 h-4 text-[#00695E] mb-2" />
+              <p className="text-xs font-bold text-[#192D2A] group-hover:text-[#00695E] transition-colors">
                 Enroll Students
               </p>
-              <p className="text-[10px] text-[#A4ADBA]">Batch / Individual</p>
-            </button>
-
-            <button
-              onClick={() => setOpenDialog("assign")}
-              className="p-3 rounded-xl bg-[#191E28]/60 hover:bg-[#191E28] border border-[#292F3B] hover:border-[#75D7FF]/40 text-left transition-all cursor-pointer group"
-            >
-              <UserCheck className="w-4 h-4 text-[#75D7FF] mb-2" />
-              <p className="text-xs font-bold text-[#F5F3EF] group-hover:text-[#75D7FF] transition-colors">
-                Assign Faculty
-              </p>
-              <p className="text-[10px] text-[#A4ADBA]">Map course</p>
+              <p className="text-[10px] text-[#526460]">Batch / Individual</p>
             </button>
 
             <button
               onClick={() => setOpenDialog("subject")}
-              className="p-3 rounded-xl bg-[#191E28]/60 hover:bg-[#191E28] border border-[#292F3B] hover:border-[#FF3D9A]/40 text-left transition-all cursor-pointer group"
+              className="p-3 rounded-xl bg-[#F2F5F2]/60 hover:bg-[#F2F5F2] border border-[#C9D4CE] hover:border-[#00695E]/40 text-left transition-all cursor-pointer group"
             >
-              <BookPlus className="w-4 h-4 text-[#FF3D9A] mb-2" />
-              <p className="text-xs font-bold text-[#F5F3EF] group-hover:text-[#FF3D9A] transition-colors">
+              <BookPlus className="w-4 h-4 text-[#00695E] mb-2" />
+              <p className="text-xs font-bold text-[#192D2A] group-hover:text-[#00695E] transition-colors">
                 New Subject
               </p>
-              <p className="text-[10px] text-[#A4ADBA]">Add to catalogue</p>
+              <p className="text-[10px] text-[#526460]">Add to catalogue</p>
             </button>
 
             <button
               onClick={() => setOpenDialog("faculty")}
-              className="p-3 rounded-xl bg-[#191E28]/60 hover:bg-[#191E28] border border-[#292F3B] hover:border-[#FF3D9A]/40 text-left transition-all cursor-pointer group"
+              className="p-3 rounded-xl bg-[#F2F5F2]/60 hover:bg-[#F2F5F2] border border-[#C9D4CE] hover:border-[#00695E]/40 text-left transition-all cursor-pointer group"
             >
-              <UserPlus className="w-4 h-4 text-[#FF3D9A] mb-2" />
-              <p className="text-xs font-bold text-[#F5F3EF] group-hover:text-[#FF3D9A] transition-colors">
+              <UserPlus className="w-4 h-4 text-[#00695E] mb-2" />
+              <p className="text-xs font-bold text-[#192D2A] group-hover:text-[#00695E] transition-colors">
                 Create Faculty
               </p>
-              <p className="text-[10px] text-[#A4ADBA]">Provision login</p>
+              <p className="text-[10px] text-[#526460]">Provision login</p>
             </button>
 
             <button
               onClick={() => setOpenDialog("promote")}
-              className="p-3 rounded-xl bg-[#191E28]/60 hover:bg-[#191E28] border border-[#292F3B] hover:border-[#FF3D9A]/40 text-left transition-all cursor-pointer group"
+              className="p-3 rounded-xl bg-[#F2F5F2]/60 hover:bg-[#F2F5F2] border border-[#C9D4CE] hover:border-[#00695E]/40 text-left transition-all cursor-pointer group"
             >
-              <TrendingUp className="w-4 h-4 text-[#FF3D9A] mb-2" />
-              <p className="text-xs font-bold text-[#F5F3EF] group-hover:text-[#FF3D9A] transition-colors">
+              <TrendingUp className="w-4 h-4 text-[#00695E] mb-2" />
+              <p className="text-xs font-bold text-[#192D2A] group-hover:text-[#00695E] transition-colors">
                 Promote Student
               </p>
-              <p className="text-[10px] text-[#A4ADBA]">Next year standing</p>
+              <p className="text-[10px] text-[#526460]">Next year standing</p>
             </button>
           </div>
         </div>
@@ -2070,16 +1966,17 @@ export default function AdminDashboard() {
         {/* ============================================================== */}
         {/* DIRECTORY EXPLORER TABLES */}
         {/* ============================================================== */}
-        <div className="p-5 sm:p-6 rounded-2xl bg-[#11141B] border border-[#292F3B] shadow-2xl space-y-5">
+        <div ref={directoryRef} tabIndex={-1} aria-label="Academic directory" className="p-5 sm:p-6 rounded-2xl bg-[#FFFFFF] border border-[#C9D4CE] shadow-2xl space-y-5">
+          {activeDirectoryTab === "assignments" && assignmentNotice && <p role="status" className="text-sm font-semibold">{assignmentNotice}</p>}
           {/* Table Header & Directory Tabs */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[#292F3B]">
-            <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-[#191E28] border border-[#292F3B]">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[#C9D4CE]">
+            <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE]">
               <button
                 onClick={() => setActiveDirectoryTab("semesters")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   activeDirectoryTab === "semesters"
-                    ? "bg-[#75D7FF] text-[#08090D] shadow-sm"
-                    : "text-[#A4ADBA] hover:text-[#F5F3EF]"
+                    ? "bg-[#00695E] text-[#F7F6F1] shadow-sm"
+                    : "text-[#526460] hover:text-[#192D2A]"
                 }`}
               >
                 Semesters ({semestersList.length})
@@ -2088,8 +1985,8 @@ export default function AdminDashboard() {
                 onClick={() => setActiveDirectoryTab("subjects")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   activeDirectoryTab === "subjects"
-                    ? "bg-[#75D7FF] text-[#08090D] shadow-sm"
-                    : "text-[#A4ADBA] hover:text-[#F5F3EF]"
+                    ? "bg-[#00695E] text-[#F7F6F1] shadow-sm"
+                    : "text-[#526460] hover:text-[#192D2A]"
                 }`}
               >
                 Subjects ({subjectsList.length})
@@ -2098,8 +1995,8 @@ export default function AdminDashboard() {
                 onClick={() => setActiveDirectoryTab("faculty")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   activeDirectoryTab === "faculty"
-                    ? "bg-[#75D7FF] text-[#08090D] shadow-sm"
-                    : "text-[#A4ADBA] hover:text-[#F5F3EF]"
+                    ? "bg-[#00695E] text-[#F7F6F1] shadow-sm"
+                    : "text-[#526460] hover:text-[#192D2A]"
                 }`}
               >
                 Faculty ({facultyList.length})
@@ -2108,8 +2005,8 @@ export default function AdminDashboard() {
                 onClick={() => setActiveDirectoryTab("students")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   activeDirectoryTab === "students"
-                    ? "bg-[#75D7FF] text-[#08090D] shadow-sm"
-                    : "text-[#A4ADBA] hover:text-[#F5F3EF]"
+                    ? "bg-[#00695E] text-[#F7F6F1] shadow-sm"
+                    : "text-[#526460] hover:text-[#192D2A]"
                 }`}
               >
                 Students ({studentsList.length})
@@ -2118,24 +2015,24 @@ export default function AdminDashboard() {
                 onClick={() => setActiveDirectoryTab("assignments")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   activeDirectoryTab === "assignments"
-                    ? "bg-[#75D7FF] text-[#08090D] shadow-sm"
-                    : "text-[#A4ADBA] hover:text-[#F5F3EF]"
+                    ? "bg-[#00695E] text-[#F7F6F1] shadow-sm"
+                    : "text-[#526460] hover:text-[#192D2A]"
                 }`}
               >
-                Allocations ({assignmentsList.length})
+                Assignments ({assignmentsList.length})
               </button>
               <button
                 onClick={() => setActiveDirectoryTab("requests")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                   activeDirectoryTab === "requests"
-                    ? "bg-[#75D7FF] text-[#08090D] shadow-sm"
-                    : "text-[#A4ADBA] hover:text-[#F5F3EF]"
+                    ? "bg-[#00695E] text-[#F7F6F1] shadow-sm"
+                    : "text-[#526460] hover:text-[#192D2A]"
                 }`}
               >
                 <Inbox className="w-3.5 h-3.5" />
                 <span>Course Requests</span>
                 {subjectRequestsList.filter((r) => r.status === "pending").length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-[#FF3D9A] text-white">
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-[#00695E] text-white">
                     {subjectRequestsList.filter((r) => r.status === "pending").length}
                   </span>
                 )}
@@ -2146,13 +2043,13 @@ export default function AdminDashboard() {
             {/* Filter & Search Bar */}
             <div className="flex items-center gap-2.5">
               <div className="relative flex-1 sm:w-64">
-                <Search className="w-3.5 h-3.5 text-[#A4ADBA] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Search className="w-3.5 h-3.5 text-[#526460] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Filter records..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+                  className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
                 />
               </div>
 
@@ -2160,7 +2057,7 @@ export default function AdminDashboard() {
                 <select
                   value={departmentFilter}
                   onChange={(e) => setDepartmentFilter(e.target.value)}
-                  className="px-2.5 py-1.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+                  className="px-2.5 py-1.5 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
                 >
                   <option value="ALL">All Depts</option>
                   <option value="CSE">CSE</option>
@@ -2173,7 +2070,7 @@ export default function AdminDashboard() {
                   <select
                     value={allocationFacultyFilter}
                     onChange={(e) => setAllocationFacultyFilter(e.target.value)}
-                    className="px-2.5 py-1.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF] max-w-[140px] truncate"
+                    className="px-2.5 py-1.5 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E] max-w-[140px] truncate"
                   >
                     <option value="ALL">All Instructors</option>
                     {facultyList.map((f) => (
@@ -2186,7 +2083,7 @@ export default function AdminDashboard() {
                   <select
                     value={allocationSemesterFilter}
                     onChange={(e) => setAllocationSemesterFilter(e.target.value)}
-                    className="px-2.5 py-1.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+                    className="px-2.5 py-1.5 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
                   >
                     <option value="ALL">All Semesters</option>
                     {SEMESTER_OPTIONS.map((opt) => (
@@ -2200,7 +2097,7 @@ export default function AdminDashboard() {
                     <select
                       value={allocationYearFilter}
                       onChange={(e) => setAllocationYearFilter(e.target.value)}
-                      className="px-2.5 py-1.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
+                      className="px-2.5 py-1.5 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-xs text-[#192D2A] focus:outline-none focus:border-[#00695E]"
                     >
                       <option value="ALL">All Terms</option>
                       {allocationYearsList.map((yr) => (
@@ -2220,7 +2117,7 @@ export default function AdminDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-[#292F3B] text-[#A4ADBA] uppercase tracking-wider text-[10px]">
+                  <tr className="border-b border-[#C9D4CE] text-[#526460] uppercase tracking-wider text-[10px]">
                     <th className="py-3 px-4 font-bold">Academic Year</th>
                     <th className="py-3 px-4 font-bold">Semester</th>
                     <th className="py-3 px-4 font-bold">Display Title</th>
@@ -2228,12 +2125,12 @@ export default function AdminDashboard() {
                     <th className="py-3 px-4 font-bold text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#292F3B]/50">
+                <tbody className="divide-y divide-[#C9D4CE]/50">
                   {filteredSemesters.map((s) => (
                     <tr key={s._id} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="py-3 px-4 font-semibold text-[#F5F3EF]">{s.academicYear}</td>
-                      <td className="py-3 px-4 text-[#75D7FF] font-mono">Semester {s.semesterNumber}</td>
-                      <td className="py-3 px-4 text-[#F5F3EF]">{s.name}</td>
+                      <td className="py-3 px-4 font-semibold text-[#192D2A]">{s.academicYear}</td>
+                      <td className="py-3 px-4 text-[#00695E] font-mono">Semester {s.semesterNumber}</td>
+                      <td className="py-3 px-4 text-[#192D2A]">{s.name}</td>
                       <td className="py-3 px-4">
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30">
                           {s.status || "Active Session"}
@@ -2252,7 +2149,7 @@ export default function AdminDashboard() {
                             }
                           }}
                           disabled={deleteSemesterMutation.isPending}
-                          className="p-1.5 rounded-lg text-[#FDA4AF] hover:bg-[#F43F5E]/15 border border-[#F43F5E]/20 hover:border-[#F43F5E]/40 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg text-[#993F37] hover:bg-[#F43F5E]/15 border border-[#F43F5E]/20 hover:border-[#F43F5E]/40 transition-colors cursor-pointer"
                           title="Delete Semester"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -2262,7 +2159,7 @@ export default function AdminDashboard() {
                   ))}
                   {filteredSemesters.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="text-center py-8 text-[#A4ADBA]">
+                      <td colSpan={5} className="text-center py-8 text-[#526460]">
                         No semesters found.
                       </td>
                     </tr>
@@ -2277,7 +2174,7 @@ export default function AdminDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-[#292F3B] text-[#A4ADBA] uppercase tracking-wider text-[10px]">
+                  <tr className="border-b border-[#C9D4CE] text-[#526460] uppercase tracking-wider text-[10px]">
                     <th className="py-3 px-4 font-bold">Code</th>
                     <th className="py-3 px-4 font-bold">Subject Title</th>
                     <th className="py-3 px-4 font-bold">Department</th>
@@ -2285,13 +2182,13 @@ export default function AdminDashboard() {
                     <th className="py-3 px-4 font-bold text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#292F3B]/50">
+                <tbody className="divide-y divide-[#C9D4CE]/50">
                   {filteredSubjects.map((sub) => (
                     <tr key={sub._id} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="py-3 px-4 font-mono font-bold text-[#75D7FF]">{sub.code}</td>
-                      <td className="py-3 px-4 font-semibold text-[#F5F3EF]">{sub.name}</td>
-                      <td className="py-3 px-4 text-[#A4ADBA]">{sub.department}</td>
-                      <td className="py-3 px-4 text-[#A4ADBA]">
+                      <td className="py-3 px-4 font-mono font-bold text-[#00695E]">{sub.code}</td>
+                      <td className="py-3 px-4 font-semibold text-[#192D2A]">{sub.name}</td>
+                      <td className="py-3 px-4 text-[#526460]">{sub.department}</td>
+                      <td className="py-3 px-4 text-[#526460]">
                         {sub.allowedSemesters && sub.allowedSemesters.length > 0
                           ? sub.allowedSemesters.map((s) => `Sem ${s}`).join(", ")
                           : `Year ${sub.year}`}
@@ -2301,7 +2198,7 @@ export default function AdminDashboard() {
                           <button
                             type="button"
                             onClick={() => setEditingSubject(sub)}
-                            className="px-2 py-1 rounded-lg bg-[#75D7FF]/15 hover:bg-[#75D7FF]/25 text-[#75D7FF] border border-[#75D7FF]/30 text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer"
+                            className="px-2 py-1 rounded-lg bg-[#00695E]/15 hover:bg-[#00695E]/25 text-[#00695E] border border-[#00695E]/30 text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer"
                             title="Edit Subject"
                           >
                             <Edit2 className="w-3 h-3" />
@@ -2319,7 +2216,7 @@ export default function AdminDashboard() {
                               }
                             }}
                             disabled={deleteSubjectMutation.isPending}
-                            className="p-1.5 rounded-lg text-[#FDA4AF] hover:bg-[#F43F5E]/15 border border-[#F43F5E]/20 hover:border-[#F43F5E]/40 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg text-[#993F37] hover:bg-[#F43F5E]/15 border border-[#F43F5E]/20 hover:border-[#F43F5E]/40 transition-colors cursor-pointer"
                             title="Delete Subject"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -2330,7 +2227,7 @@ export default function AdminDashboard() {
                   ))}
                   {filteredSubjects.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="text-center py-8 text-[#A4ADBA]">
+                      <td colSpan={5} className="text-center py-8 text-[#526460]">
                         No subjects match your filter.
                       </td>
                     </tr>
@@ -2345,7 +2242,7 @@ export default function AdminDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-[#292F3B] text-[#A4ADBA] uppercase tracking-wider text-[10px]">
+                  <tr className="border-b border-[#C9D4CE] text-[#526460] uppercase tracking-wider text-[10px]">
                     <th className="py-3 px-4 font-bold">Faculty Name</th>
                     <th className="py-3 px-4 font-bold">Email</th>
                     <th className="py-3 px-4 font-bold">Designation</th>
@@ -2353,19 +2250,19 @@ export default function AdminDashboard() {
                     <th className="py-3 px-4 font-bold text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#292F3B]/50">
+                <tbody className="divide-y divide-[#C9D4CE]/50">
                   {filteredFaculty.map((f) => (
                     <tr key={f._id} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="py-3 px-4 font-semibold text-[#F5F3EF]">{f.name}</td>
-                      <td className="py-3 px-4 text-[#75D7FF] font-mono">{f.email}</td>
-                      <td className="py-3 px-4 text-[#A4ADBA]">{f.designation || "Professor"}</td>
-                      <td className="py-3 px-4 text-[#A4ADBA]">{f.department || "CSE"}</td>
+                      <td className="py-3 px-4 font-semibold text-[#192D2A]">{f.name}</td>
+                      <td className="py-3 px-4 text-[#00695E] font-mono">{f.email}</td>
+                      <td className="py-3 px-4 text-[#526460]">{f.designation || "Professor"}</td>
+                      <td className="py-3 px-4 text-[#526460]">{f.department || "CSE"}</td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
                             onClick={() => setEditingFaculty(f)}
-                            className="px-2 py-1 rounded-lg bg-[#75D7FF]/15 hover:bg-[#75D7FF]/25 text-[#75D7FF] border border-[#75D7FF]/30 text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer"
+                            className="px-2 py-1 rounded-lg bg-[#00695E]/15 hover:bg-[#00695E]/25 text-[#00695E] border border-[#00695E]/30 text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer"
                             title="Edit Faculty"
                           >
                             <Edit2 className="w-3 h-3" />
@@ -2383,7 +2280,7 @@ export default function AdminDashboard() {
                               }
                             }}
                             disabled={deleteFacultyMutation.isPending}
-                            className="p-1.5 rounded-lg text-[#FDA4AF] hover:bg-[#F43F5E]/15 border border-[#F43F5E]/20 hover:border-[#F43F5E]/40 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg text-[#993F37] hover:bg-[#F43F5E]/15 border border-[#F43F5E]/20 hover:border-[#F43F5E]/40 transition-colors cursor-pointer"
                             title="Delete Faculty"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -2394,7 +2291,7 @@ export default function AdminDashboard() {
                   ))}
                   {filteredFaculty.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="text-center py-8 text-[#A4ADBA]">
+                      <td colSpan={5} className="text-center py-8 text-[#526460]">
                         No faculty found.
                       </td>
                     </tr>
@@ -2409,7 +2306,7 @@ export default function AdminDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-[#292F3B] text-[#A4ADBA] uppercase tracking-wider text-[10px]">
+                  <tr className="border-b border-[#C9D4CE] text-[#526460] uppercase tracking-wider text-[10px]">
                     <th className="py-3 px-4 font-bold">Student Name</th>
                     <th className="py-3 px-4 font-bold">MIS / ID</th>
                     <th className="py-3 px-4 font-bold">Email</th>
@@ -2418,15 +2315,15 @@ export default function AdminDashboard() {
                     <th className="py-3 px-4 font-bold text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#292F3B]/50">
+                <tbody className="divide-y divide-[#C9D4CE]/50">
                   {filteredStudents.map((st) => (
                     <tr key={st._id} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="py-3 px-4 font-semibold text-[#F5F3EF]">{st.name}</td>
-                      <td className="py-3 px-4 font-mono font-bold text-[#75D7FF]">{st.mis || "—"}</td>
-                      <td className="py-3 px-4 text-[#A4ADBA]">{st.email}</td>
-                      <td className="py-3 px-4 text-[#A4ADBA]">{st.department}</td>
+                      <td className="py-3 px-4 font-semibold text-[#192D2A]">{st.name}</td>
+                      <td className="py-3 px-4 font-mono font-bold text-[#00695E]">{st.mis || "—"}</td>
+                      <td className="py-3 px-4 text-[#526460]">{st.email}</td>
+                      <td className="py-3 px-4 text-[#526460]">{st.department}</td>
                       <td className="py-3 px-4">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#191E28] text-[#F5F3EF] border border-[#292F3B]">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#F2F5F2] text-[#192D2A] border border-[#C9D4CE]">
                           Year {st.year}
                         </span>
                       </td>
@@ -2435,7 +2332,7 @@ export default function AdminDashboard() {
                           <button
                             type="button"
                             onClick={() => setEditingStudent(st)}
-                            className="px-2 py-1 rounded-lg bg-[#75D7FF]/15 hover:bg-[#75D7FF]/25 text-[#75D7FF] border border-[#75D7FF]/30 text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer"
+                            className="px-2 py-1 rounded-lg bg-[#00695E]/15 hover:bg-[#00695E]/25 text-[#00695E] border border-[#00695E]/30 text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer"
                             title="Edit Student"
                           >
                             <Edit2 className="w-3 h-3" />
@@ -2453,7 +2350,7 @@ export default function AdminDashboard() {
                               }
                             }}
                             disabled={deleteStudentMutation.isPending}
-                            className="p-1.5 rounded-lg text-[#FDA4AF] hover:bg-[#F43F5E]/15 border border-[#F43F5E]/20 hover:border-[#F43F5E]/40 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg text-[#993F37] hover:bg-[#F43F5E]/15 border border-[#F43F5E]/20 hover:border-[#F43F5E]/40 transition-colors cursor-pointer"
                             title="Delete Student"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -2464,7 +2361,7 @@ export default function AdminDashboard() {
                   ))}
                   {filteredStudents.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="text-center py-8 text-[#A4ADBA]">
+                      <td colSpan={6} className="text-center py-8 text-[#526460]">
                         No students found.
                       </td>
                     </tr>
@@ -2479,7 +2376,7 @@ export default function AdminDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-[#292F3B] text-[#A4ADBA] uppercase tracking-wider text-[10px]">
+                  <tr className="border-b border-[#C9D4CE] text-[#526460] uppercase tracking-wider text-[10px]">
                     <th className="py-3 px-4 font-bold">Assigned Faculty</th>
                     <th className="py-3 px-4 font-bold">Course Offering</th>
                     <th className="py-3 px-4 font-bold">Academic Term</th>
@@ -2488,38 +2385,38 @@ export default function AdminDashboard() {
                     <th className="py-3 px-4 font-bold text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#292F3B]/50">
+                <tbody className="divide-y divide-[#C9D4CE]/50">
                   {filteredAssignments.map((a) => (
                     <tr key={a._id} className="hover:bg-white/[0.02] transition-colors">
                       <td className="py-3 px-4">
-                        <div className="font-semibold text-[#F5F3EF]">
+                        <div className="font-semibold text-[#192D2A]">
                           {a.facultyId?.name || "Faculty Member"}
                         </div>
                         {a.facultyId?.email && (
-                          <div className="text-[11px] text-[#A4ADBA] font-mono">
+                          <div className="text-[11px] text-[#526460] font-mono">
                             {a.facultyId.email}
                           </div>
                         )}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-[#75D7FF] font-bold">
+                          <span className="font-mono text-[#00695E] font-bold">
                             {a.subjectId?.code}
                           </span>
-                          <span className="text-[#F5F3EF]">{a.subjectId?.name}</span>
+                          <span className="text-[#192D2A]">{a.subjectId?.name}</span>
                         </div>
-                        <div className="text-[10px] text-[#A4ADBA] mt-0.5">
+                        <div className="text-[10px] text-[#526460] mt-0.5">
                           {a.subjectId?.department || a.department || "CSE"} • {a.program || "B.Tech"}
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="text-[#F5F3EF] font-medium">{a.academicYear}</div>
-                        <div className="text-[#75D7FF] font-mono text-[11px]">
+                        <div className="text-[#192D2A] font-medium">{a.academicYear}</div>
+                        <div className="text-[#00695E] font-mono text-[11px]">
                           Semester {a.semester} • Sec {a.section || "A"}
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#75D7FF]/10 text-[#75D7FF] border border-[#75D7FF]/25">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#00695E]/10 text-[#00695E] border border-[#00695E]/25">
                           <GraduationCap className="w-3.5 h-3.5" />
                           <span>{a.enrolledCount ?? 0} Scholars</span>
                         </span>
@@ -2544,7 +2441,7 @@ export default function AdminDashboard() {
                             }
                           }}
                           disabled={deleteAssignmentMutation.isPending}
-                          className="p-1.5 rounded-lg text-[#FDA4AF] hover:bg-[#F43F5E]/15 border border-[#F43F5E]/20 hover:border-[#F43F5E]/40 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg text-[#993F37] hover:bg-[#F43F5E]/15 border border-[#F43F5E]/20 hover:border-[#F43F5E]/40 transition-colors cursor-pointer"
                           title="Remove Teaching Assignment"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -2554,7 +2451,7 @@ export default function AdminDashboard() {
                   ))}
                   {filteredAssignments.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="text-center py-8 text-[#A4ADBA]">
+                      <td colSpan={6} className="text-center py-8 text-[#526460]">
                         No allocations match the selected criteria.
                       </td>
                     </tr>
@@ -2569,7 +2466,7 @@ export default function AdminDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-[#292F3B] text-[#A4ADBA] uppercase tracking-wider text-[10px]">
+                  <tr className="border-b border-[#C9D4CE] text-[#526460] uppercase tracking-wider text-[10px]">
                     <th className="py-3 px-4 font-bold">Course Requested</th>
                     <th className="py-3 px-4 font-bold">Term & Section</th>
                     <th className="py-3 px-4 font-bold">Department</th>
@@ -2579,7 +2476,7 @@ export default function AdminDashboard() {
                     <th className="py-3 px-4 font-bold text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#292F3B]/50">
+                <tbody className="divide-y divide-[#C9D4CE]/50">
                   {filteredSubjectRequests.map((r) => {
                     const isPending = r.status === "pending";
                     const isApproved = r.status === "approved";
@@ -2589,29 +2486,29 @@ export default function AdminDashboard() {
                       <tr key={r._id} className="hover:bg-white/[0.02] transition-colors">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-[#75D7FF] font-bold">
+                            <span className="font-mono text-[#00695E] font-bold">
                               {r.code}
                             </span>
-                            <span className="text-[#F5F3EF] font-semibold">{r.name}</span>
+                            <span className="text-[#192D2A] font-semibold">{r.name}</span>
                           </div>
                         </td>
-                        <td className="py-3 px-4 font-medium text-[#F5F3EF]">
+                        <td className="py-3 px-4 font-medium text-[#192D2A]">
                           Semester {r.semester || 1} • Sec {r.section || "A"}
                         </td>
                         <td className="py-3 px-4">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#191E28] text-[#F5F3EF] border border-[#292F3B]">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#F2F5F2] text-[#192D2A] border border-[#C9D4CE]">
                             {r.department}
                           </span>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="font-semibold text-[#F5F3EF]">
+                          <div className="font-semibold text-[#192D2A]">
                             {r.facultyId?.name || "Faculty Member"}
                           </div>
-                          <div className="text-[11px] text-[#A4ADBA] font-mono">
+                          <div className="text-[11px] text-[#526460] font-mono">
                             {r.facultyId?.email || "—"}
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-[#A4ADBA]">
+                        <td className="py-3 px-4 text-[#526460]">
                           {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}
                         </td>
                         <td className="py-3 px-4">
@@ -2628,7 +2525,7 @@ export default function AdminDashboard() {
                             </span>
                           )}
                           {isRejected && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#F43F5E]/15 text-[#FDA4AF] border border-[#F43F5E]/30">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#F43F5E]/15 text-[#993F37] border border-[#F43F5E]/30">
                               <X className="w-3 h-3" />
                               <span>Declined</span>
                             </span>
@@ -2661,7 +2558,7 @@ export default function AdminDashboard() {
                                   });
                                 }}
                                 disabled={updateSubjectRequestMutation.isPending}
-                                className="px-2.5 py-1 rounded-lg bg-[#F43F5E]/15 hover:bg-[#F43F5E]/25 text-[#FDA4AF] border border-[#F43F5E]/30 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                                className="px-2.5 py-1 rounded-lg bg-[#F43F5E]/15 hover:bg-[#F43F5E]/25 text-[#993F37] border border-[#F43F5E]/30 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                                 title="Decline Request"
                               >
                                 <X className="w-3 h-3" />
@@ -2669,7 +2566,7 @@ export default function AdminDashboard() {
                               </button>
                             </div>
                           ) : (
-                            <span className="text-[11px] text-[#A4ADBA] italic">Reviewed</span>
+                            <span className="text-[11px] text-[#526460] italic">Reviewed</span>
                           )}
                         </td>
                       </tr>
@@ -2677,7 +2574,7 @@ export default function AdminDashboard() {
                   })}
                   {filteredSubjectRequests.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="text-center py-8 text-[#A4ADBA]">
+                      <td colSpan={7} className="text-center py-8 text-[#526460]">
                         No course addition requests found.
                       </td>
                     </tr>
@@ -2699,11 +2596,38 @@ export default function AdminDashboard() {
       />
       <CreateFacultyDialog open={openDialog === "faculty"} onClose={() => setOpenDialog(null)} />
       <CreateSubjectDialog open={openDialog === "subject"} onClose={() => setOpenDialog(null)} />
-      <AssignFacultyDialog key={"AssignFacultyDialog-" + directories.currentSession?.academicYear}
-        open={openDialog === "assign"}
-        onClose={() => setOpenDialog(null)}
-        directories={directories}
-      />
+      {openDialog === "assign" && (
+        directoriesQuery.isError || !directoriesQuery.data ? (
+          <ModalWrapper open onClose={() => setOpenDialog(null)} title="Assign Faculty to Course Offerings" icon={UserCheck}>
+            {directoriesQuery.isError ? (
+              <div role="alert" className="space-y-3 text-sm text-[#993F37]">
+                <p>{getErrorMessage(directoriesQuery.error)}</p>
+                <button onClick={() => directoriesQuery.refetch()} className="text-[#00695E]">Retry</button>
+              </div>
+            ) : <p role="status" className="text-sm text-[#526460]">Loading academic session…</p>}
+          </ModalWrapper>
+        ) : directories.currentSession ? (
+          <AssignFacultyDialog
+            onCatalogue={() => showDirectory("subjects")}
+            onSaved={(form, count) => {
+              setAllocationFacultyFilter(form.facultyId);
+              setAllocationYearFilter(directories.currentSession.academicYear);
+              setAllocationSemesterFilter(String(form.semester));
+              const name = facultyList.find(f => f._id === form.facultyId)?.name || "Instructor";
+              setAssignmentNotice(count ? `${count} assignment(s) saved for ${name}, semester ${form.semester}, section ${form.section || "A"}.` : "These courses were already assigned.");
+              showDirectory("assignments");
+            }}
+            key={directories.currentSession.academicYear + "/" + directories.currentSession.activeSemesters.join(",")}
+            onClose={() => setOpenDialog(null)}
+            directories={directories}
+          />
+        ) : (
+          <ModalWrapper open onClose={() => setOpenDialog(null)} title="Set Up Academic Session"
+            subtitle="Choose the active term before assigning faculty." icon={Calendar}>
+            <AcademicSessionForm onCancel={() => setOpenDialog(null)} submitLabel="Save and continue" />
+          </ModalWrapper>
+        )
+      )}
       <ReferenceAudience />
       <PromoteStudentDialog
         open={openDialog === "promote"}

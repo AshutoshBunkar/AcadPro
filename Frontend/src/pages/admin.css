@@ -1,0 +1,25 @@
+main:has(.admin-workspace), .admin-workspace, .admin-dialog {
+  background: #f7f6f1;
+  color: #192d2a;
+  color-scheme: light;
+  font-family: "DM Sans", system-ui, sans-serif;
+}
+.admin-workspace .shadow-xl, .admin-workspace .shadow-2xl { box-shadow: 0 2px 8px #192d2a0a; }
+.admin-overview { display: grid; gap: .75rem; padding-block: .75rem; }
+.admin-overview h1, .admin-dialog h3 { font: 600 clamp(1.65rem, 4vw, 2.35rem)/1.15 Spectral, Georgia, serif; }
+.admin-overview p { color: #526460; }
+.admin-overview button { border: 1px solid #778882; padding: .65rem 1rem; border-radius: 10px; background: white; font-weight: 600; }
+.admin-overview button:first-child { background: #00695e; color: white; border-color: #00695e; }
+.admin-dialog { margin: auto; padding: 0; width: min(36rem, 94vw); max-height: 92dvh; overflow: auto; border: 1px solid #c9d4ce; border-radius: 14px; background: white; }
+.admin-dialog::backdrop { background: rgb(17 38 34 / 60%); }
+.admin-workspace :focus-visible, .admin-dialog :focus-visible { outline: 2px solid #00695e; outline-offset: 2px; }
+.admin-dialog input, .admin-dialog select { border-color: #778882; }
+.admin-dialog input[type=checkbox] { accent-color: #00695e; }
+.admin-dialog :is(button, select, input:not([type=checkbox])), .admin-dialog label:has(input[type=checkbox]) { min-height: 44px; }
+.admin-submit { position: sticky; bottom: 0; background: white; padding-block: .5rem; }
+@media (max-width: 600px) {
+  .admin-dialog { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; }
+  .admin-dialog > div > div:last-child { max-height: calc(100dvh - 6rem); padding: 1rem; }
+  .admin-workspace select, .admin-dialog select { max-width: 100%; min-width: 0; }
+  .admin-workspace .flex:has(> select) { flex-wrap: wrap; }
+}
