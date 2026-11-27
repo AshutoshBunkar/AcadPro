@@ -21,11 +21,11 @@ const auditLogSchema = new mongoose.Schema(
     },
     actorEmail: {
       type: String,
-      default: "s.connor@acadpro.edu",
+      default: "",
     },
     ipAddress: {
       type: String,
-      default: "192.168.1.104",
+      default: "",
     },
     severity: {
       type: String,

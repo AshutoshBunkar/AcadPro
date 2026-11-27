@@ -1,8 +1,13 @@
+import { promoteStudentYear } from "./promotion.js";
+import { randomBytes } from "node:crypto";
+import bcrypt from "bcrypt";
+import { issueChallenge, mailOrigin, validEmail } from "../utils/challenges.js";
 import mongoose from "mongoose";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
-import jwt from "jsonwebtoken";
+import { deliverSession } from "../utils/browserSession.js";
+import { sessionToken } from "../utils/accountAccess.js";
 import { Admin } from "../models/Admin.js";
 import { Faculty } from "../models/Faculty.js";
 import { TeachingAssignment } from "../models/TeachingAssignment.js";
@@ -21,12 +26,10 @@ import { deleteFromCloudinary } from "../utils/cloudinary.js";
 
 import {
   ACTIVE_ACADEMIC_YEAR,
-  ALLOWED_ACADEMIC_YEARS,
-  ACTIVE_SEMESTERS,
+  requireActiveTerm,
   TERM_CONFIG,
   TERM_OPTIONS,
   isValidAcademicYear,
-  isValidActiveSemester,
   deriveYearFromSemester,
   formatSemesterLabel,
 } from "../utils/academicConfig.js";
@@ -55,7 +58,7 @@ const recordAuditLog = async ({
       status,
     });
   } catch (err) {
-    console.error("Audit log error:", err.message);
+    console.error("audit_write_failed");
   }
 };
 
@@ -89,11 +92,7 @@ const loginAdmin = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid admin credentials");
   }
 
-  const token = jwt.sign(
-    { id: admin._id, role: "admin" },
-    process.env.JWT_SECRET,
-    { expiresIn: "7d" }
-  );
+  const token = sessionToken(admin, "admin");
 
   const loggedInAdmin = await Admin.findById(admin._id).select("-password");
 
@@ -111,7 +110,7 @@ const loginAdmin = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, { admin: loggedInAdmin, token }, "Admin logged in successfully")
+      new ApiResponse(200, { admin: loggedInAdmin, ...deliverSession(req, res, token) }, "Admin logged in successfully")
     );
 });
 
@@ -277,6 +276,8 @@ const changeAdminPassword = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Current password is incorrect");
   }
 
+  admin.sessionVersion = (admin.sessionVersion || 0) + 1;
+
   admin.password = newPassword;
   await admin.save();
 
@@ -358,7 +359,7 @@ const getAdminDirectories = asyncHandler(async (req, res) => {
   return res.status(200).json(
     new ApiResponse(
       200,
-      { faculty, subjects, students, assignments, semesters, subjectRequests },
+      { faculty, subjects, students, assignments, semesters, subjectRequests, currentSession: await AcademicSession.findOne() },
       "Admin directories retrieved successfully"
 
     )
@@ -370,7 +371,6 @@ const createFaculty = asyncHandler(async (req, res) => {
   const {
     name,
     email,
-    password,
     department,
     designation,
     specialization,
@@ -379,8 +379,8 @@ const createFaculty = asyncHandler(async (req, res) => {
     officeHours,
   } = req.body;
 
-  if (!password || !email || !name) {
-    throw new ApiError(400, "name, email and password are required!");
+  if (!validEmail(email) || !name) {
+    throw new ApiError(400, "Name and a valid email are required!");
   }
 
   const normalizedEmail = email.trim().toLowerCase();
@@ -390,10 +390,12 @@ const createFaculty = asyncHandler(async (req, res) => {
     throw new ApiError(409, "Faculty with this email already exists");
   }
 
+  mailOrigin();
   const facultyUser = await Faculty.create({
     name: name.trim(),
     email: normalizedEmail,
-    password,
+    password: randomBytes(32).toString("hex"),
+    invitationPending: true,
     department: department ? department.trim() : "",
     designation: designation ? designation.trim() : "",
     specialization: specialization ? specialization.trim() : "",
@@ -406,6 +408,7 @@ const createFaculty = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while registering the Faculty");
   }
 
+  await issueChallenge(facultyUser, "faculty", "invite");
   const createdFaculty = await Faculty.findById(facultyUser._id).select("-password");
 
   await recordAuditLog({
@@ -442,8 +445,9 @@ const assignSubject = asyncHandler(async (req, res) => {
   }
 
   const normalizedYear = academicYear.trim();
+  await requireActiveTerm(normalizedYear, semNum);
   if (!isValidAcademicYear(normalizedYear)) {
-    throw new ApiError(400, `Academic year must be ${ACTIVE_ACADEMIC_YEAR}`);
+    throw new ApiError(400, `Use consecutive academic years, for example 2026-2027`);
   }
 
   const faculty = await Faculty.findById(facultyId);
@@ -520,6 +524,7 @@ const assignSubject = asyncHandler(async (req, res) => {
         subjectId: sId,
         academicYear: normalizedYear,
         semester: semNum,
+        section: normalizedSection,
         $or: [{ facultyId: { $exists: false } }, { facultyId: null }],
       },
       {
@@ -567,13 +572,8 @@ const removeTeachingAssignment = asyncHandler(async (req, res) => {
   }
 
   const { academicYear, semester, section } = assignment;
-  await TeachingAssignment.findByIdAndDelete(id);
-
-  // Unlink from enrollments
-  await StudentEnrollment.updateMany(
-    { teachingAssignmentId: id },
-    { $set: { teachingAssignmentId: null, facultyId: null } }
-  );
+  assignment.status = "archived";
+  await assignment.save();
 
   await recordAuditLog({
     action: "TEACHING_ASSIGNMENT_REMOVED",
@@ -590,255 +590,14 @@ const removeTeachingAssignment = asyncHandler(async (req, res) => {
 });
 
 // Promote Student Academic Placement & Synchronize Enrollments (Atomic & Reliable)
-const promoteStudentYear = asyncHandler(async (req, res) => {
-  const { studentId, newYear, newSemester, targetYear: aliasYear, targetSemester: aliasSem, academicYear, section } = req.body;
-
-  if (!studentId) {
-    throw new ApiError(400, "studentId is required");
-  }
-
-  const resolvedNewYear = newYear !== undefined ? newYear : aliasYear;
-  const resolvedNewSemester = newSemester !== undefined ? newSemester : aliasSem;
-
-  if (resolvedNewYear === undefined && resolvedNewSemester === undefined) {
-    throw new ApiError(400, "newYear or newSemester is required for promotion");
-  }
-
-  const student = await Student.findById(studentId);
-  if (!student) {
-    throw new ApiError(404, "Student does not exist");
-  }
-
-  const oldYear = student.year;
-  const oldSemester = student.currentSemester || ((oldYear - 1) * 2 + 1);
-
-  // Derive target semester and year
-  let targetSem;
-  let targetYear;
-
-  if (resolvedNewSemester !== undefined) {
-    targetSem = Number(resolvedNewSemester);
-    if (isNaN(targetSem) || targetSem < 1 || targetSem > 8) {
-      throw new ApiError(400, "Invalid target semester. Semester must be between 1 and 8");
-    }
-    targetYear = resolvedNewYear ? Number(resolvedNewYear) : deriveYearFromSemester(targetSem);
-  } else {
-    targetYear = Number(resolvedNewYear);
-    if (isNaN(targetYear) || targetYear < 1 || targetYear > 4) {
-      throw new ApiError(400, "Invalid target academic year. Year must be between 1 and 4");
-    }
-    // Default to the first semester of that academic year
-    targetSem = (targetYear - 1) * 2 + 1;
-  }
-
-  // Validate promotion eligibility: cannot promote backwards or to the exact same semester
-  if (targetSem <= oldSemester) {
-    throw new ApiError(
-      400,
-      `Invalid target semester. Student is already placed in Semester ${oldSemester}. Target semester must be higher.`
-    );
-  }
-
-  // Determine active academic session
-  const currentSession = await AcademicSession.findOne();
-  const normalizedYear = (academicYear || currentSession?.academicYear || ACTIVE_ACADEMIC_YEAR).trim();
-
-  if (!isValidAcademicYear(normalizedYear)) {
-    throw new ApiError(400, `Academic year must be ${ACTIVE_ACADEMIC_YEAR}`);
-  }
-
-  // Resolve curriculum subjects for student's department and target semester
-  const eligibleSubjects = await Subject.find({
-    department: student.department,
-    $or: [
-      { allowedSemesters: targetSem },
-      { year: targetYear, allowedSemesters: { $size: 0 } },
-    ],
-  });
-
-  const verifiedSubjects = eligibleSubjects.filter((sub) => {
-    const allowed = sub.allowedSemesters || [];
-    return allowed.length === 0 || allowed.includes(targetSem);
-  });
-
-  if (verifiedSubjects.length === 0) {
-    throw new ApiError(
-      400,
-      `No curriculum course offerings configured for department "${student.department}" in Semester ${targetSem} (Year ${targetYear}). Please configure subjects and offerings before promoting.`
-    );
-  }
-
-  // Ensure target Semester document exists and is active
-  let semesterDoc = await Semester.findOne({
-    academicYear: normalizedYear,
-    semesterNumber: targetSem,
-  });
-
-  if (!semesterDoc) {
-    semesterDoc = await Semester.create({
-      academicYear: normalizedYear,
-      semesterNumber: targetSem,
-      name: `AY ${normalizedYear} - ${formatSemesterLabel(targetSem)}`,
-      status: "active",
-      isCurrent: currentSession?.semester === targetSem,
-    });
-  } else if (semesterDoc.status === "pending_enrollment") {
-    semesterDoc.status = "active";
-    await semesterDoc.save();
-  }
-
-  // Perform atomic promotion within a database transaction
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  let createdCount = 0;
-  let alreadyEnrolledCount = 0;
-  let transitionedCount = 0;
-  const enrollmentsCreated = [];
-  const warnings = [];
-
-  try {
-    // 1. Transition past active enrollments (for earlier semesters or prior academic years) to completed
-    const oldEnrollmentsUpdate = await StudentEnrollment.updateMany(
-      {
-        studentId: student._id,
-        $or: [
-          { academicYear: { $ne: normalizedYear } },
-          { semester: { $lt: targetSem } },
-        ],
-        status: { $in: ["enrolled", "active"] },
-      },
-      { $set: { status: "completed" } },
-      { session }
-    );
-    transitionedCount = oldEnrollmentsUpdate?.modifiedCount || 0;
-
-    // 2. Synchronize new semester course enrollments
-    for (const sub of verifiedSubjects) {
-      // Find active teaching assignment for faculty linkage
-      const taQuery = {
-        subjectId: sub._id,
-        academicYear: normalizedYear,
-        semester: targetSem,
-        status: { $ne: "archived" },
-      };
-      if (section) {
-        taQuery.section = section.trim().toUpperCase();
-      }
-      const assignment = await TeachingAssignment.findOne(taQuery).session(session);
-
-      if (!assignment) {
-        warnings.push(`Course ${sub.code} (${sub.name}) currently has no active faculty assigned for AY ${normalizedYear} Sem ${targetSem}.`);
-      }
-
-      const existingEnrollment = await StudentEnrollment.findOne({
-        studentId: student._id,
-        subjectId: sub._id,
-        academicYear: normalizedYear,
-        semester: targetSem,
-      }).session(session);
-
-      if (existingEnrollment) {
-        // If enrollment already existed, ensure active status and link faculty if unassigned
-        if (existingEnrollment.status !== "enrolled" && existingEnrollment.status !== "active") {
-          existingEnrollment.status = "enrolled";
-        }
-        if (assignment?.facultyId && !existingEnrollment.facultyId) {
-          existingEnrollment.facultyId = assignment.facultyId;
-          existingEnrollment.teachingAssignmentId = assignment._id;
-        }
-        if (assignment?.section && !existingEnrollment.section) {
-          existingEnrollment.section = assignment.section;
-        }
-        await existingEnrollment.save({ session });
-        alreadyEnrolledCount++;
-        enrollmentsCreated.push(existingEnrollment);
-      } else {
-        const [newEnr] = await StudentEnrollment.create(
-          [
-            {
-              studentId: student._id,
-              subjectId: sub._id,
-              academicYear: normalizedYear,
-              semester: targetSem,
-              semesterId: semesterDoc._id,
-              facultyId: assignment?.facultyId || null,
-              teachingAssignmentId: assignment?._id || null,
-              status: "enrolled",
-              section: assignment?.section || (section ? section.trim().toUpperCase() : "A"),
-              department: student.department,
-              program: assignment?.program || "B.Tech",
-              enrolledAt: new Date(),
-            },
-          ],
-          { session }
-        );
-        createdCount++;
-        enrollmentsCreated.push(newEnr);
-      }
-    }
-
-    // 3. Update student academic placement
-    student.year = targetYear;
-    student.currentSemester = targetSem;
-    await student.save({ session });
-
-    // Commit all changes atomically
-    await session.commitTransaction();
-  } catch (error) {
-    await session.abortTransaction();
-    throw error;
-  } finally {
-    session.endSession();
-  }
-
-  await recordAuditLog({
-    action: "STUDENT_PROMOTED",
-    category: "CURRICULUM",
-    details: `Promoted student ${student.name} (${student.mis}) from Year ${oldYear} (Sem ${oldSemester}) to Year ${targetYear} (Sem ${targetSem}) in AY ${normalizedYear}. Created ${createdCount} enrollments, preserved ${alreadyEnrolledCount} existing, marked ${transitionedCount} historical course(s) completed.`,
-    actor: req.user?.name || "System Admin",
-    actorEmail: req.user?.email || "admin@acadpro.edu",
-    ipAddress: req.ip || "127.0.0.1",
-    severity: "INFO",
-    status: "SUCCESS",
-  });
-
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        student,
-        promotedTo: {
-          year: targetYear,
-          semester: targetSem,
-          academicYear: normalizedYear,
-        },
-        enrollments: {
-          created: createdCount,
-          existing: alreadyEnrolledCount,
-          total: enrollmentsCreated.length,
-          courses: verifiedSubjects.map((s) => ({
-            _id: s._id,
-            code: s.code,
-            name: s.name,
-          })),
-        },
-        transitionedOldEnrollments: transitionedCount,
-        warnings: warnings.length > 0 ? warnings : undefined,
-      },
-      `Student ${student.name} successfully promoted to Year ${targetYear} (${formatSemesterLabel(targetSem)}) with ${createdCount} new course enrollment(s).`
-    )
-  );
-});
-
 // Update Academic Session Logic
 const updateAcademicSession = asyncHandler(async (req, res) => {
   const { academicYear, term, semester, activeSemesters } = req.body;
 
-  const normalizedYear = (academicYear || ACTIVE_ACADEMIC_YEAR).trim();
+  const normalizedYear = (academicYear || (await AcademicSession.findOne())?.academicYear || ACTIVE_ACADEMIC_YEAR).trim();
 
   if (!isValidAcademicYear(normalizedYear)) {
-    throw new ApiError(400, `Academic year must be ${ACTIVE_ACADEMIC_YEAR}`);
+    throw new ApiError(400, `Use consecutive academic years, for example 2026-2027`);
   }
 
   // Resolve term (ODD covers semesters 1, 3, 5, 7; EVEN covers 2, 4, 6, 8)
@@ -855,27 +614,30 @@ const updateAcademicSession = asyncHandler(async (req, res) => {
     }
   }
 
-  const termData = TERM_CONFIG[resolvedTerm] || TERM_CONFIG.ODD;
+  const termData = TERM_CONFIG[resolvedTerm];
+  if (!termData) throw new ApiError(400, "Unknown academic term.");
   const resolvedSemesters = Array.isArray(activeSemesters) && activeSemesters.length > 0
     ? activeSemesters.map(Number)
     : termData.semesters;
 
-  const session = await AcademicSession.findOneAndUpdate(
+  if (resolvedSemesters.some(s => !termData.semesters.includes(s))) throw new ApiError(400, "Semester outside selected term.");
+  const session = await mongoose.connection.transaction(async transaction => {
+    const active = await AcademicSession.findOneAndUpdate(
     {},
     {
       academicYear: normalizedYear,
       term: resolvedTerm,
       termName: termData.name,
       activeSemesters: resolvedSemesters,
-      semester: isValidActiveSemester(semNum) ? semNum : null,
+      semester: resolvedSemesters.includes(semNum) ? semNum : null,
     },
-    { new: true, upsert: true }
+    { new: true, upsert: true, session: transaction }
   );
 
   // Sync with Semester collection: activate all semesters in the active term
   await Semester.updateMany(
-    { academicYear: normalizedYear },
-    { isCurrent: false }
+    { isCurrent: true },
+    { isCurrent: false }, { session: transaction }
   );
 
   for (const sNum of resolvedSemesters) {
@@ -883,7 +645,7 @@ const updateAcademicSession = asyncHandler(async (req, res) => {
       academicYear: normalizedYear,
       semester: sNum,
       status: { $in: ["enrolled", "active"] },
-    });
+    }).session(transaction);
     const status = enrolledCount > 0 ? "active" : "pending_enrollment";
 
     await Semester.findOneAndUpdate(
@@ -895,9 +657,12 @@ const updateAcademicSession = asyncHandler(async (req, res) => {
         isCurrent: true,
         status,
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true, session: transaction }
     );
   }
+
+    return active;
+  });
 
   await recordAuditLog({
     action: "ACADEMIC_SESSION_UPDATED",
@@ -942,10 +707,10 @@ const createSemester = asyncHandler(async (req, res) => {
     throw new ApiError(400, "semesterNumber must be an integer between 1 and 8");
   }
 
-  const normalizedYear = (academicYear || ACTIVE_ACADEMIC_YEAR).trim();
+  const normalizedYear = (academicYear || (await AcademicSession.findOne())?.academicYear || ACTIVE_ACADEMIC_YEAR).trim();
 
   if (!isValidAcademicYear(normalizedYear)) {
-    throw new ApiError(400, `Academic year must be ${ACTIVE_ACADEMIC_YEAR}`);
+    throw new ApiError(400, `Use consecutive academic years, for example 2026-2027`);
   }
 
   const existing = await Semester.findOne({
@@ -1173,10 +938,11 @@ const enrollStudentInSubjects = asyncHandler(async (req, res) => {
   }
 
   const semNum = Number(semester);
-  const normalizedYear = (academicYear || ACTIVE_ACADEMIC_YEAR).trim();
+  const normalizedYear = (academicYear || (await AcademicSession.findOne())?.academicYear || ACTIVE_ACADEMIC_YEAR).trim();
 
+  await requireActiveTerm(normalizedYear, semNum);
   if (!isValidAcademicYear(normalizedYear)) {
-    throw new ApiError(400, `Academic year must be ${ACTIVE_ACADEMIC_YEAR}`);
+    throw new ApiError(400, `Use consecutive academic years, for example 2026-2027`);
   }
   if (isNaN(semNum) || semNum < 1 || semNum > 8) {
     throw new ApiError(
@@ -1276,7 +1042,7 @@ const enrollStudentInSubjects = asyncHandler(async (req, res) => {
   await recordAuditLog({
     action: "STUDENT_ENROLLED",
     category: "CURRICULUM",
-    details: `Enrolled student ${student.name} (${student.mis}) in ${enrollmentsCreated.length} subject(s) for AY ${normalizedYear} Sem ${semNum}`,
+    details: "Student enrollment updated",
     actor: req.user?.name || "Sarah Connor",
     actorEmail: req.user?.email || "admin@acadpro.edu",
     ipAddress: req.ip || "127.0.0.1",
@@ -1301,9 +1067,10 @@ const batchEnrollStudents = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Semester must be a valid number between 1 and 8");
   }
 
-  const normalizedYear = (academicYear || ACTIVE_ACADEMIC_YEAR).trim();
+  const normalizedYear = (academicYear || (await AcademicSession.findOne())?.academicYear || ACTIVE_ACADEMIC_YEAR).trim();
+  await requireActiveTerm(normalizedYear, semNum);
   if (!isValidAcademicYear(normalizedYear)) {
-    throw new ApiError(400, `Academic year must be ${ACTIVE_ACADEMIC_YEAR}`);
+    throw new ApiError(400, `Use consecutive academic years, for example 2026-2027`);
   }
 
   // Derive undergraduate study year from semester
@@ -1501,7 +1268,7 @@ const removeStudentEnrollment = asyncHandler(async (req, res) => {
   await recordAuditLog({
     action: "STUDENT_UNENROLLED",
     category: "CURRICULUM",
-    details: `Removed enrollment for student ${studentId} in subject ${subjectId} (AY ${academicYear} Sem ${semester})`,
+    details: "Student directory or enrollment updated",
     actor: req.user?.name || "Sarah Connor",
     actorEmail: req.user?.email || "admin@acadpro.edu",
     ipAddress: req.ip || "127.0.0.1",
@@ -1532,56 +1299,37 @@ const updateSubjectRequestStatus = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Status must be 'approved' or 'rejected'");
   }
 
-  const subjectRequest = await SubjectRequest.findById(id).populate("facultyId");
-  if (!subjectRequest) {
-    throw new ApiError(404, "Subject request not found");
-  }
-
-  // Idempotency: prevent approving already approved request
-  if (status === "approved" && subjectRequest.status === "approved") {
-    throw new ApiError(400, "This course addition request has already been approved");
-  }
-
+  let data;
+  try {
+    data = await mongoose.connection.transaction(async session => {
+    const subjectRequest = await SubjectRequest.findById(id).populate("facultyId").session(session);
+    if (!subjectRequest) throw new ApiError(404, "Subject request not found.");
+    if (subjectRequest.status === status) return { subjectRequest, enrolledCount: 0 };
+    if (subjectRequest.status !== "pending") throw new ApiError(409, "This decision is final.");
   // If rejecting
   if (status === "rejected") {
     subjectRequest.status = "rejected";
     subjectRequest.adminRemarks = adminRemarks ? adminRemarks.trim() : "Declined by Administrator";
     subjectRequest.reviewedBy = req.user?._id;
     subjectRequest.reviewedAt = new Date();
-    await subjectRequest.save();
+    await subjectRequest.save({ session });
 
     if (subjectRequest.facultyId) {
-      await Notification.create({
+      await Notification.create([{
         recipient: subjectRequest.facultyId._id,
         recipientRole: "faculty",
         title: `Course Request Declined: ${subjectRequest.code}`,
         message: `Your request to add course ${subjectRequest.code} ("${subjectRequest.name}") was declined: ${subjectRequest.adminRemarks}`,
         type: "assignment",
         link: "/faculty/dashboard",
-      });
+      }], { session });
     }
 
-    await recordAuditLog({
-      action: "SUBJECT_REQUEST_STATUS_UPDATED",
-      category: "CURRICULUM",
-      details: `Admin ${req.user?.name || "System Admin"} declined course request ${subjectRequest.code} (${subjectRequest.name}) for faculty ${subjectRequest.facultyId?.name || "Unknown"}`,
-      actor: req.user?.name || "System Admin",
-      actorEmail: req.user?.email || "admin@acadpro.edu",
-      ipAddress: req.ip || "127.0.0.1",
-      severity: "INFO",
-      status: "SUCCESS",
-    });
-
-    return res.status(200).json(
-      new ApiResponse(200, subjectRequest, `Subject request for ${subjectRequest.code} has been rejected.`)
-    );
+    await AuditLog.create([{ action: "SUBJECT_REQUEST_STATUS_UPDATED", category: "CURRICULUM",
+      actor: String(req.user._id), details: "Rejected course request " + subjectRequest.code }], { session });
+    return { subjectRequest };
   }
 
-  // If approving: Atomic database transaction across Subject, Semester, TeachingAssignment, and StudentEnrollment
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
     const normalizedCode = subjectRequest.code.trim().toUpperCase();
     const normalizedName = subjectRequest.name.trim();
     const targetDept = subjectRequest.department.trim();
@@ -1682,6 +1430,7 @@ const updateSubjectRequestStatus = asyncHandler(async (req, res) => {
     // 4. Enroll all eligible students matching department and current semester
     const eligibleStudents = await Student.find({
       department: targetDept,
+      section: targetSection === "A" ? { $in: ["A", null] } : targetSection,
       $or: [
         { currentSemester: targetSemester },
         { year: targetYear, currentSemester: { $exists: false } },
@@ -1771,26 +1520,13 @@ const updateSubjectRequestStatus = asyncHandler(async (req, res) => {
       { session }
     );
 
-    await session.commitTransaction();
-
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        {
-          subjectRequest,
-          subject,
-          teachingAssignment,
-          enrolledCount,
-        },
-        `Subject request for ${normalizedCode} approved successfully. Course catalog, faculty offering, and student enrollments synchronized.`
-      )
-    );
+    return { subjectRequest, subject, teachingAssignment, enrolledCount };
+    });
   } catch (error) {
-    await session.abortTransaction();
+    console.warn("course_approval_failed");
     throw error;
-  } finally {
-    session.endSession();
   }
+  return res.status(200).json(new ApiResponse(200, data, "Request " + status));
 });
 
 // Update Student (Admin)
@@ -1810,7 +1546,8 @@ const updateStudent = asyncHandler(async (req, res) => {
     if (existing) {
       throw new ApiError(409, "A student with this email address already exists");
     }
-    student.email = normalizedEmail;
+    if (!validEmail(normalizedEmail)) throw new ApiError(400, "Invalid email.");
+    await issueChallenge(student, "student", "email", normalizedEmail);
   }
 
   // Check MIS uniqueness if modified
@@ -1844,6 +1581,7 @@ const updateStudent = asyncHandler(async (req, res) => {
 
   if (password && password.trim().length >= 6) {
     const salt = await bcrypt.genSalt(10);
+    student.sessionVersion = (student.sessionVersion || 0) + 1;
     student.password = await bcrypt.hash(password.trim(), salt);
   }
 
@@ -1852,7 +1590,7 @@ const updateStudent = asyncHandler(async (req, res) => {
   await recordAuditLog({
     action: "STUDENT_UPDATED",
     category: "RBAC",
-    details: `Updated student record for ${student.name} (${student.mis})`,
+    details: "Student directory or enrollment updated",
     actor: req.user?.name || "System Admin",
     actorEmail: req.user?.email || "admin@acadpro.edu",
     ipAddress: req.ip || "127.0.0.1",
@@ -1894,7 +1632,8 @@ const updateFaculty = asyncHandler(async (req, res) => {
     if (existing) {
       throw new ApiError(409, "A faculty member with this email address already exists");
     }
-    faculty.email = normalizedEmail;
+    if (!validEmail(normalizedEmail)) throw new ApiError(400, "Invalid email.");
+    await issueChallenge(faculty, "faculty", "email", normalizedEmail);
   }
 
   if (name !== undefined) faculty.name = name.trim();
@@ -1907,6 +1646,7 @@ const updateFaculty = asyncHandler(async (req, res) => {
   if (avatar !== undefined) faculty.avatar = avatar.trim();
 
   if (password && password.trim().length >= 6) {
+    faculty.sessionVersion = (faculty.sessionVersion || 0) + 1;
     faculty.password = password.trim(); // Will be hashed by pre('save') hook
   }
 
@@ -2010,7 +1750,7 @@ const deleteStudent = asyncHandler(async (req, res) => {
   await recordAuditLog({
     action: "STUDENT_DELETED",
     category: "RBAC",
-    details: `Deleted student ${student.name} (${student.mis}) and cleared all course enrollments`,
+    details: "Student directory or enrollment updated",
     actor: req.user?.name || "System Admin",
     actorEmail: req.user?.email || "admin@acadpro.edu",
     ipAddress: req.ip || "127.0.0.1",

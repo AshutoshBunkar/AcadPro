@@ -1,5 +1,3 @@
-export const COLLEGE_EMAIL_DOMAIN = "@iiitp.ac.in";
-
 export const DEPARTMENTS = [
   { value: "CSE", label: "Computer Science and Engineering" },
   { value: "ECE", label: "Electronics and Communication Engineering" },

@@ -1,3 +1,5 @@
+import { AcademicSession } from "../models/AcademicSession.js";
+import { ApiError } from "./ApiError.js";
 /**
  * Centralized Academic Year and Semester Configuration for AcadPro
  */
@@ -53,7 +55,8 @@ export const SEMESTER_OPTIONS = [
  */
 export function isValidAcademicYear(year) {
   if (!year || typeof year !== "string") return false;
-  return ALLOWED_ACADEMIC_YEARS.includes(year.trim());
+  const match = /^(\d{4})-(\d{4})$/.exec(year.trim());
+  return Boolean(match && Number(match[2]) === Number(match[1]) + 1);
 }
 
 /**
@@ -80,4 +83,11 @@ export function deriveYearFromSemester(sem) {
 export function formatSemesterLabel(sem) {
   const num = Number(sem);
   return SEMESTER_LABELS[num] || `Semester ${num}`;
+}
+
+export async function requireActiveTerm(year, semester) {
+  const term = await AcademicSession.findOne();
+  if (!term) throw new ApiError(409, "Configure the academic session first.");
+  if (year !== term.academicYear) throw new ApiError(400, "Active academic year is " + term.academicYear);
+  if (!term.activeSemesters.includes(semester)) throw new ApiError(400, "Active semester offerings: " + term.activeSemesters.join(", "));
 }

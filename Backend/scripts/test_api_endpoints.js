@@ -9,7 +9,7 @@ import { Faculty } from "../models/Faculty.js";
 import { Admin } from "../models/Admin.js";
 import { Subject } from "../models/Subject.js";
 
-const BASE_URL = "http://localhost:10000";
+const BASE_URL = process.env.TEST_API_BASE || "http://localhost:10000";
 
 async function runApiTests() {
   console.log("=== RUNNING HTTP API INTEGRATION TESTS ===");
@@ -31,13 +31,13 @@ async function runApiTests() {
 
     // Sign tokens with process.env.JWT_SECRET
     const adminToken = jwt.sign(
-      { id: adminUser._id.toString(), email: adminUser.email, role: "admin" },
+      { version: adminUser.sessionVersion || 0, id: adminUser._id.toString(), email: adminUser.email, role: "admin" },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
     const studentToken = jwt.sign(
-      { id: studentUser._id.toString(), email: studentUser.email, role: "student" },
+      { version: studentUser.sessionVersion || 0, id: studentUser._id.toString(), email: studentUser.email, role: "student" },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -75,7 +75,7 @@ async function runApiTests() {
       body: JSON.stringify({
         subjectId: testSub._id.toString(),
         facultyId: faculty._id.toString(),
-        academicYear: "4",
+        academicYear: "2026-2027",
         semester: 7 // Invalid semester!
       })
     });

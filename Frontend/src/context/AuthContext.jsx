@@ -1,50 +1,35 @@
-import { useMemo, useState, useCallback } from "react";
-import { AuthContext, TOKEN_KEY, USER_KEY, ROLE_KEY } from "./authContext";
-
-function readStoredUser() {
-  try {
-    const raw = localStorage.getItem(USER_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
+import { useCallback, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import api from "../api/axios";
+import { AuthContext, TOKEN_KEY, ROLE_KEY, USER_KEY } from "./authContext";
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
-  const [role, setRole] = useState(() => localStorage.getItem(ROLE_KEY));
-  const [user, setUser] = useState(readStoredUser);
-
-  const login = useCallback((nextRole, { token: nextToken, ...rest }) => {
-    const nextUser = rest.student || rest.faculty || rest.admin;
-    localStorage.setItem(TOKEN_KEY, nextToken);
-    localStorage.setItem(ROLE_KEY, nextRole);
-    localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
-    setToken(nextToken);
-    setRole(nextRole);
-    setUser(nextUser);
-  }, []);
-
-  const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(ROLE_KEY);
-    localStorage.removeItem(USER_KEY);
-    setToken(null);
-    setRole(null);
-    setUser(null);
-  }, []);
-
-  const value = useMemo(
-    () => ({
-      token,
-      role,
-      user,
-      isAuthenticated: Boolean(token),
-      login,
-      logout,
-    }),
-    [token, role, user, login, logout]
-  );
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const cache = useQueryClient();
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let live = true;
+    for (const key of [TOKEN_KEY, ROLE_KEY, USER_KEY]) localStorage.removeItem(key);
+    api.get("/account/session").then(({data}) => { if (live) setSession(data); })
+      .catch(() => {}).finally(() => { if (live) setLoading(false); });
+    const interceptor = api.interceptors.response.use(response => response, error => {
+      if (error.response?.status === 401 && !error.config?.url?.endsWith("/login")) {
+        setSession(null);
+        cache.clear();
+      }
+      return Promise.reject(error);
+    });
+    return () => { live = false; api.interceptors.response.eject(interceptor); };
+  }, [cache]);
+  const login = useCallback((role, data) => {
+    cache.clear();
+    setSession({ role, user: data[role] });
+  }, [cache]);
+  const logout = useCallback(async () => {
+    await api.post("/account/logout");
+    cache.clear(); setSession(null);
+  }, [cache]);
+  return <AuthContext.Provider value={{ ...session, isAuthenticated: Boolean(session), loading, login, logout }}>
+    {children}
+  </AuthContext.Provider>;
 }

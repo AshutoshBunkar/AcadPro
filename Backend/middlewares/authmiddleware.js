@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { requireVerified } from "../utils/accountAccess.js";
 import jwt from "jsonwebtoken";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -15,11 +16,7 @@ const roleModelMap = {
 const verifyJWT = asyncHandler(async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    throw new ApiError(401, "No access token provided");
-  }
-
-  const [, token] = authHeader.split(" ");
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : req.cookies?.acadpro_session;
 
   if (!token) {
     throw new ApiError(401, "No access token provided");
@@ -44,6 +41,8 @@ const verifyJWT = asyncHandler(async (req, res, next) => {
     throw new ApiError(401, "User not found for this token");
   }
 
+  requireVerified(user, decoded.role);
+  if ((decoded.version || 0) !== (user.sessionVersion || 0)) throw new ApiError(401, "Sign in again.");
   req.user = user;
   // Keep the verified claims separate from the Mongoose document. Mutating a
   // strict Mongoose document with `user.role` is not a reliable way to carry

@@ -1,3 +1,4 @@
+import { accessibleLecture, canDiscuss } from "../utils/courseAccess.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -14,6 +15,7 @@ const getComments = asyncHandler(async (req, res) => {
     throw new ApiError(400, "lectureId is required");
   }
 
+  await accessibleLecture(req, lectureId);
   const comments = await Comment.find({ lectureId })
     .populate("studentId", "name email")
     .populate("replies.facultyId", "name email")
@@ -33,39 +35,9 @@ const postComment = asyncHandler(async (req, res) => {
   }
 
   const text = rawText.trim();
-  const lecture = await Lecture.findById(lectureId);
-
-  if (!lecture) {
-    throw new ApiError(404, "Lecture does not exist!");
-  }
-
-  // Check past-semester read-only policy
-  const topic = await Topic.findById(lecture.topicId);
-  const currentSession = await AcademicSession.findOne();
-
-  const studentId = req.user._id || req.user.id;
-
-  if (topic && currentSession) {
-    const isCurrentlyEnrolled = await StudentEnrollment.findOne({
-      studentId,
-      subjectId: topic.subjectId,
-      academicYear: currentSession.academicYear,
-      status: { $in: ["enrolled", "active"] },
-    });
-
-
-    const totalEnrollments = await StudentEnrollment.countDocuments({
-      studentId,
-    });
-
-    if (totalEnrollments > 0 && !isCurrentlyEnrolled) {
-      throw new ApiError(
-        403,
-        "This course is archived and read-only. Questions and comments can only be posted in currently active semester courses."
-      );
-    }
-  }
-
+  const lecture = await accessibleLecture(req, lectureId);
+  if (!await canDiscuss(req, lecture)) throw new ApiError(403, "This lecture is read-only.");
+  const studentId = req.user._id;
   const comment = await Comment.create({
     lectureId,
     studentId,

@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 
 const lectureSchema = new mongoose.Schema({
+  offeringId: { type: mongoose.Schema.Types.ObjectId, ref: "TeachingAssignment", index: true },
+  referenceSemesters: { type: [Number], default: [] },
+  department: String,
+  mediaType: String,
   topicId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
@@ -32,7 +36,7 @@ const lectureSchema = new mongoose.Schema({
 
   thumbnailUrl: {
     type: String,
-    required: true
+    default: ""
   },
 
   duration: {

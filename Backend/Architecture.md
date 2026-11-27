@@ -69,7 +69,7 @@ Student ──┐                    Admin
 **Auth hashing:** `Admin` and `Faculty` hash passwords automatically via a Mongoose `pre("save")` hook. `Student` hashes manually inside the signup controller. All three models expose an `isPasswordCorrect(password)` instance method wrapping `bcrypt.compare`.
 
 **Not built (deliberately shelved):**
-- `ValidStudent` (MIS allowlist) — no allowlist data currently available; replaced with a simpler college-email-domain check (`@iiitp.ac.in`) on signup.
+- Student activation matches the email address and MIS against the approved roster. Any email domain is accepted.
 - `WatchHistory` — explicitly deferred to v2.
 
 ---

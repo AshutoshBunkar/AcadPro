@@ -1,3 +1,4 @@
+import ReferenceAudience from "../components/ReferenceAudience";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -18,7 +19,6 @@ import {
   Inbox,
   Clock,
   Edit2,
-  CheckCircle,
 } from "lucide-react";
 
 import AppLayout from "../components/layout/AppLayout";
@@ -43,9 +43,7 @@ import {
 import { createSubject } from "../api/subjects";
 
 import {
-  YEARS,
   ACTIVE_ACADEMIC_YEAR,
-  ACADEMIC_YEARS,
   SEMESTER_OPTIONS,
 } from "../constants";
 import { getErrorMessage } from "../api/axios";
@@ -62,7 +60,7 @@ function ModalWrapper({ open, onClose, title, subtitle, icon: Icon, children }) 
         className="fixed inset-0 bg-[#08090D]/85 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
-      <motion.div
+      <motion.div role="dialog" aria-modal="true" aria-label={title}
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
@@ -82,7 +80,7 @@ function ModalWrapper({ open, onClose, title, subtitle, icon: Icon, children }) 
             </div>
           </div>
           <button
-            onClick={onClose}
+            aria-label="Close dialog" onClick={onClose}
             className="p-1.5 rounded-lg text-[#A4ADBA] hover:text-[#F5F3EF] hover:bg-white/5 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -95,10 +93,10 @@ function ModalWrapper({ open, onClose, title, subtitle, icon: Icon, children }) 
 }
 
 // 1. Create Academic Semester Dialog
-function CreateSemesterDialog({ open, onClose }) {
+function CreateSemesterDialog({ open, onClose, directories }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
-    academicYear: ACTIVE_ACADEMIC_YEAR,
+    academicYear: directories?.currentSession?.academicYear || ACTIVE_ACADEMIC_YEAR,
     semesterNumber: 1,
     name: "",
     isCurrent: false,
@@ -131,17 +129,11 @@ function CreateSemesterDialog({ open, onClose }) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Academic Year</label>
-            <select
+            <input aria-label="Academic year" required pattern="[0-9]{4}-[0-9]{4}"
               value={form.academicYear}
               onChange={(e) => setForm((f) => ({ ...f, academicYear: e.target.value }))}
               className="w-full px-3.5 py-2.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs sm:text-sm text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
-            >
-              {ACADEMIC_YEARS.map((yr) => (
-                <option key={yr} value={yr}>
-                  {yr}
-                </option>
-              ))}
-            </select>
+             />
           </div>
           <div>
             <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Target Semester</label>
@@ -218,18 +210,18 @@ function EnrollStudentDialog({ open, onClose, directories }) {
   const [batchForm, setBatchForm] = useState({
     department: "CSE",
     semester: 1,
-    academicYear: ACTIVE_ACADEMIC_YEAR,
+    academicYear: directories?.currentSession?.academicYear || ACTIVE_ACADEMIC_YEAR,
   });
 
   // Individual Form
   const [indivForm, setIndivForm] = useState({
     studentId: "",
     subjectIds: [],
-    academicYear: ACTIVE_ACADEMIC_YEAR,
+    academicYear: directories?.currentSession?.academicYear || ACTIVE_ACADEMIC_YEAR,
     semester: 1,
   });
 
-  const studentsList = directories?.students || [];
+  const studentsList = useMemo(() => directories?.students || [], [directories?.students]);
   const subjectsList = directories?.subjects || [];
 
   const batchMutation = useMutation({
@@ -338,17 +330,11 @@ function EnrollStudentDialog({ open, onClose, directories }) {
 
               <div>
                 <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Academic Year</label>
-                <select
+                <input aria-label="Academic year" required pattern="[0-9]{4}-[0-9]{4}"
                   value={batchForm.academicYear}
                   onChange={(e) => setBatchForm((f) => ({ ...f, academicYear: e.target.value }))}
                   className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
-                >
-                  {ACADEMIC_YEARS.map((yr) => (
-                    <option key={yr} value={yr}>
-                      {yr}
-                    </option>
-                  ))}
-                </select>
+                 />
               </div>
             </div>
 
@@ -394,17 +380,11 @@ function EnrollStudentDialog({ open, onClose, directories }) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Academic Year</label>
-                <select
+                <input aria-label="Academic year" required pattern="[0-9]{4}-[0-9]{4}"
                   value={indivForm.academicYear}
                   onChange={(e) => setIndivForm((f) => ({ ...f, academicYear: e.target.value }))}
                   className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
-                >
-                  {ACADEMIC_YEARS.map((yr) => (
-                    <option key={yr} value={yr}>
-                      {yr}
-                    </option>
-                  ))}
-                </select>
+                 />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Target Semester</label>
@@ -512,7 +492,7 @@ function AssignFacultyDialog({ open, onClose, directories }) {
   const [form, setForm] = useState({
     facultyId: "",
     subjectIds: [],
-    academicYear: ACTIVE_ACADEMIC_YEAR,
+    academicYear: directories?.currentSession?.academicYear || ACTIVE_ACADEMIC_YEAR,
     semester: 3,
     section: "A",
     department: "CSE",
@@ -575,7 +555,7 @@ function AssignFacultyDialog({ open, onClose, directories }) {
     setForm({
       facultyId: "",
       subjectIds: [],
-      academicYear: ACTIVE_ACADEMIC_YEAR,
+      academicYear: directories?.currentSession?.academicYear || ACTIVE_ACADEMIC_YEAR,
       semester: 3,
       section: "A",
       department: "CSE",
@@ -631,17 +611,11 @@ function AssignFacultyDialog({ open, onClose, directories }) {
             <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">
               Academic Year <span className="text-[#FF3D9A]">*</span>
             </label>
-            <select
+            <input aria-label="Academic year" required pattern="[0-9]{4}-[0-9]{4}"
               value={form.academicYear}
               onChange={(e) => setForm((f) => ({ ...f, academicYear: e.target.value }))}
               className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
-            >
-              {ACADEMIC_YEARS.map((yr) => (
-                <option key={yr} value={yr}>
-                  {yr}
-                </option>
-              ))}
-            </select>
+             />
           </div>
           <div>
             <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">
@@ -972,7 +946,7 @@ function CreateFacultyDialog({ open, onClose }) {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">College Email</label>
+          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Email</label>
           <input
             type="email"
             required
@@ -983,17 +957,7 @@ function CreateFacultyDialog({ open, onClose }) {
           />
         </div>
 
-        <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Initial Password</label>
-          <input
-            type="password"
-            required
-            placeholder="Min 6 characters"
-            value={form.password}
-            onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
-          />
-        </div>
+        <p className="text-sm text-[#A4ADBA]">The instructor will receive an email invitation to choose their password.</p>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -1049,7 +1013,7 @@ function CreateFacultyDialog({ open, onClose }) {
 function PromoteStudentDialog({ open, onClose, directories }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({ studentId: "", newYear: 2, newSemester: 3 });
-  const studentsList = directories?.students || [];
+  const studentsList = useMemo(() => directories?.students || [], [directories?.students]);
 
   const selectedStudent = useMemo(() => {
     return studentsList.find((s) => s._id === form.studentId);
@@ -1059,7 +1023,7 @@ function PromoteStudentDialog({ open, onClose, directories }) {
     const st = studentsList.find((s) => s._id === stId);
     if (st) {
       const currentSem = st.currentSemester || ((st.year - 1) * 2 + 1);
-      const nextSem = Math.min(currentSem + 1, 8);
+      const nextSem = directories?.currentSession?.activeSemesters?.find(n => n > currentSem) || Math.min(currentSem + 1, 8);
       const nextYear = Math.ceil(nextSem / 2);
       setForm({
         studentId: stId,
@@ -1071,6 +1035,12 @@ function PromoteStudentDialog({ open, onClose, directories }) {
     }
   };
 
+  const preview = useQuery({
+    queryKey: ["promotion-preview", form],
+    queryFn: () => promoteStudent({ ...form, preview: true }).then(r => r.data.data),
+    enabled: open && Boolean(form.studentId),
+    retry: false,
+  });
   const mutation = useMutation({
     mutationFn: () =>
       promoteStudent({
@@ -1096,7 +1066,7 @@ function PromoteStudentDialog({ open, onClose, directories }) {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          mutation.mutate();
+          if (preview.isSuccess) mutation.mutate();
         }}
         className="space-y-3.5"
       >
@@ -1104,7 +1074,7 @@ function PromoteStudentDialog({ open, onClose, directories }) {
           <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Select Student</label>
           <select
             required
-            value={form.studentId}
+            aria-label="Select student" value={form.studentId}
             onChange={(e) => handleStudentSelect(e.target.value)}
             className="w-full px-3 py-2 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
           >
@@ -1139,7 +1109,7 @@ function PromoteStudentDialog({ open, onClose, directories }) {
             Target Progression Semester <span className="text-[#FF3D9A]">*</span>
           </label>
           <select
-            value={form.newSemester}
+            aria-label="Target semester" value={form.newSemester}
             onChange={(e) => {
               const sem = Number(e.target.value);
               setForm((f) => ({
@@ -1171,6 +1141,11 @@ function PromoteStudentDialog({ open, onClose, directories }) {
           </p>
         </div>
 
+        {preview.data && <p role="status" className="text-sm text-[#75D7FF]">
+          Archive {preview.data.transitionedOldEnrollments} enrollments. Add {preview.data.enrollments.created}.
+          Courses: {preview.data.enrollments.courses.map(c => c.code).join(", ")}.
+        </p>}
+        {preview.isError && <p role="alert">{getErrorMessage(preview.error)}</p>}
         {mutation.isError && (
           <div className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#FDA4AF] text-xs">
             {getErrorMessage(mutation.error)}
@@ -1200,8 +1175,8 @@ function PromoteStudentDialog({ open, onClose, directories }) {
           </button>
           <button
             type="submit"
-            disabled={mutation.isPending || !form.studentId}
-            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#FF3D9A] hover:bg-[#FF66AE] text-white shadow-md shadow-[#FF3D9A]/20 cursor-pointer disabled:opacity-40"
+            disabled={mutation.isPending || !preview.isSuccess}
+            className="px-5 py-2 text-xs font-bold rounded-xl bg-[#FF3D9A] hover:bg-[#FF66AE] text-black shadow-md shadow-[#FF3D9A]/20 cursor-pointer disabled:opacity-40"
           >
             {mutation.isPending ? "Promoting & Enrolling..." : "Promote Student"}
           </button>
@@ -1296,7 +1271,7 @@ function EditStudentDialog({ student, onClose }) {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Institutional Email</label>
+          <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">Email</label>
           <input
             type="email"
             required
@@ -2716,19 +2691,20 @@ export default function AdminDashboard() {
       </div>
 
       {/* Management Dialogs */}
-      <CreateSemesterDialog open={openDialog === "semester"} onClose={() => setOpenDialog(null)} />
-      <EnrollStudentDialog
+      <CreateSemesterDialog key={"CreateSemesterDialog-" + directories.currentSession?.academicYear} directories={directories} open={openDialog === "semester"} onClose={() => setOpenDialog(null)} />
+      <EnrollStudentDialog key={"EnrollStudentDialog-" + directories.currentSession?.academicYear}
         open={openDialog === "enroll"}
         onClose={() => setOpenDialog(null)}
         directories={directories}
       />
       <CreateFacultyDialog open={openDialog === "faculty"} onClose={() => setOpenDialog(null)} />
       <CreateSubjectDialog open={openDialog === "subject"} onClose={() => setOpenDialog(null)} />
-      <AssignFacultyDialog
+      <AssignFacultyDialog key={"AssignFacultyDialog-" + directories.currentSession?.academicYear}
         open={openDialog === "assign"}
         onClose={() => setOpenDialog(null)}
         directories={directories}
       />
+      <ReferenceAudience />
       <PromoteStudentDialog
         open={openDialog === "promote"}
         onClose={() => setOpenDialog(null)}

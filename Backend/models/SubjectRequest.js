@@ -92,7 +92,8 @@ const subjectRequestSchema = new mongoose.Schema(
 
 // Prevent duplicate pending requests for the same course offering
 subjectRequestSchema.index(
-  { code: 1, academicYear: 1, semester: 1, section: 1, status: 1 }
+  { code: 1, academicYear: 1, semester: 1, section: 1 },
+  { unique: true, partialFilterExpression: { status: "pending" } }
 );
 
 export const SubjectRequest = mongoose.model("SubjectRequest", subjectRequestSchema);

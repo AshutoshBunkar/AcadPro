@@ -97,7 +97,7 @@ export default function StudentDashboard() {
     return pastSemestersList
       .filter((sem) => {
         if (selectedPastSemesterKey === "all") return true;
-        return String(sem.semesterNumber) === selectedPastSemesterKey;
+        return sem.key === selectedPastSemesterKey;
       })
       .map((sem) => ({
         ...sem,
@@ -112,7 +112,7 @@ export default function StudentDashboard() {
   }, [pastSemestersList, selectedPastSemesterKey, searchQuery]);
 
   // Open course handler
-  const handleOpenCourse = (subjectId, isArchived = false, semesterNum = null, isReference = false) => {
+  const handleOpenCourse = (subjectId, isArchived = false, semesterNum = null, isReference = false, offeringId = null) => {
     if (!subjectId) return;
     let url = `/subjects/${subjectId}/topics`;
     if (isArchived) {
@@ -120,6 +120,7 @@ export default function StudentDashboard() {
     } else if (isReference) {
       url += `?reference=true&semester=${semesterNum || ""}`;
     }
+    if (offeringId) url += (url.includes("?") ? "&" : "?") + "offeringId=" + offeringId;
     navigate(url);
   };
 
@@ -211,7 +212,7 @@ export default function StudentDashboard() {
                 Semester Enrollment Pending Confirmation
               </p>
               <p className="text-[#A4ADBA] mt-0.5 text-xs leading-relaxed">
-                The administration has scheduled the new academic session. Course offerings are currently being assigned to faculty. Showing baseline curriculum preview below.
+                The administration has scheduled the new academic session. Course offerings are currently being assigned to faculty. Courses will appear here once your enrollment is confirmed.
               </p>
             </div>
           </div>
@@ -230,7 +231,7 @@ export default function StudentDashboard() {
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span>Current Semester</span>
+              <span>Current</span>
               <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-[#08090D]/20">
                 {currentCoursesList.length}
               </span>
@@ -245,7 +246,7 @@ export default function StudentDashboard() {
               }`}
             >
               <Lock className="w-3.5 h-3.5" />
-              <span>Archived Semesters</span>
+              <span>Archived</span>
               <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-[#08090D]/20">
                 {pastSemestersList.length}
               </span>
@@ -282,8 +283,8 @@ export default function StudentDashboard() {
               >
                 <option value="all">All Semesters</option>
                 {pastSemestersList.map((sem) => (
-                  <option key={sem.semesterNumber} value={String(sem.semesterNumber)}>
-                    Semester {sem.semesterNumber}
+                  <option key={sem.key} value={sem.key}>
+                    {sem.academicYear} / Semester {sem.semesterNumber} / {sem.name}
                   </option>
                 ))}
               </select>
@@ -335,7 +336,8 @@ export default function StudentDashboard() {
                       whileHover={{ y: -4 }}
                       transition={{ duration: 0.2 }}
                       className="group rounded-2xl bg-[#11141B] border border-[#292F3B] hover:border-[#75D7FF]/40 overflow-hidden shadow-xl flex flex-col justify-between transition-all duration-200 cursor-pointer"
-                      onClick={() => handleOpenCourse(subjectId, false)}
+                      role="link" tabIndex={0} onKeyDown={e => { if (e.target === e.currentTarget && e.key === "Enter") handleOpenCourse(subjectId, false, null, false, course.offeringId); }}
+                      onClick={() => handleOpenCourse(subjectId, false, null, false, course.offeringId)}
                     >
                       {/* Course Image Header */}
                       <div className="relative aspect-[16/9] bg-[#191E28] overflow-hidden">
@@ -377,6 +379,9 @@ export default function StudentDashboard() {
                           </span>
                         </div>
 
+                        {course.latestLecture && <button className="text-left text-sm text-[#75D7FF]" onClick={e => {
+                          e.stopPropagation(); navigate("/lectures/" + course.latestLecture._id);
+                        }}>Play latest · {course.latestLecture.title}</button>}
                         {/* Card Action Button */}
                         <div className="pt-3 border-t border-[#292F3B]/60 flex items-center justify-between">
                           <span className="text-xs font-semibold text-[#A4ADBA] group-hover:text-[#F5F3EF] transition-colors">
@@ -421,7 +426,7 @@ export default function StudentDashboard() {
               </div>
             ) : (
               filteredPastSemesters.map((sem) => (
-                <div key={sem.semesterNumber} className="space-y-4">
+                <div key={sem.key} className="space-y-4">
                   {/* Semester Section Header */}
                   <div className="flex items-center justify-between pb-2 border-b border-[#292F3B]">
                     <div className="flex items-center gap-2.5">
@@ -443,13 +448,13 @@ export default function StudentDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {(sem.courses || []).map((course, cIdx) => (
                       <div
-                        key={course._id || cIdx}
+                        key={course.offeringId || course._id || cIdx} role="link" tabIndex={0} onKeyDown={e => { if (e.key === "Enter") e.currentTarget.click(); }}
                         onClick={() =>
                           handleOpenCourse(
                             course._id || course.subjectId,
                             !course.isReferenceResource,
                             sem.semesterNumber,
-                            course.isReferenceResource
+                            course.isReferenceResource, course.offeringId
                           )
                         }
                         className={`p-4 rounded-2xl bg-[#11141B] hover:bg-[#151922] border cursor-pointer shadow-lg transition-all group flex flex-col justify-between space-y-3 ${

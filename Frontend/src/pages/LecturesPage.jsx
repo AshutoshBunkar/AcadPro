@@ -22,11 +22,12 @@ export default function LecturesPage() {
 
   const isArchived = searchParams.get("archived") === "true";
   const isReference = searchParams.get("reference") === "true";
+  const offeringId = searchParams.get("offeringId") || undefined;
   const semester = searchParams.get("semester");
 
   const lecturesQuery = useQuery({
-    queryKey: ["lectures", "topic", topicId],
-    queryFn: () => getLecturesByTopic(topicId),
+    queryKey: ["lectures", "topic", topicId, offeringId],
+    queryFn: () => getLecturesByTopic(topicId, offeringId),
     select: (res) => res.data.data,
   });
 

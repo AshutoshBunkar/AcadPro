@@ -51,19 +51,19 @@ async function runLiveApiTests() {
     }
 
     const adminToken = jwt.sign(
-      { id: adminUser._id.toString(), email: adminUser.email, role: "admin" },
+      { version: adminUser.sessionVersion || 0, id: adminUser._id.toString(), email: adminUser.email, role: "admin" },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
     const facultyToken = jwt.sign(
-      { id: facultyUser._id.toString(), email: facultyUser.email, role: "faculty" },
+      { version: facultyUser.sessionVersion || 0, id: facultyUser._id.toString(), email: facultyUser.email, role: "faculty" },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
     const studentToken = jwt.sign(
-      { id: studentUser._id.toString(), email: studentUser.email, role: "student" },
+      { version: studentUser.sessionVersion || 0, id: studentUser._id.toString(), email: studentUser.email, role: "student" },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );

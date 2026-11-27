@@ -1,17 +1,14 @@
 import axios from "axios";
 
+export const apiBase = import.meta.env.MODE === "demo"
+  ? window.location.origin
+  : import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:10000" : window.location.origin);
 const api = axios.create({
   // Keep the client fallback aligned with Backend/index.js. Deployments can
   // still override this with VITE_API_BASE_URL.
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:10000",
-});
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("acadpro_token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+  withCredentials: true,
+  headers: { "X-AcadPro-Client": "web" },
+  baseURL: apiBase,
 });
 
 export default api;

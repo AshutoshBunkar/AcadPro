@@ -11,13 +11,14 @@ const checkTeachingAssignment = asyncHandler(async (req, res, next) => {
   const topicId = req.body?.topicId || req.params?.topicId || req.query?.topicId;
 
   // Lecture upload sends topicId, not subjectId directly — derive it
-  if (!subjectId && topicId) {
+  if (topicId) {
     const topic = await Topic.findById(topicId);
 
     if (!topic) {
       throw new ApiError(404, "Topic not found");
     }
 
+    if (subjectId && String(subjectId) !== String(topic.subjectId)) throw new ApiError(400, "Topic belongs to a different subject.");
     subjectId = topic.subjectId;
   }
 
@@ -43,17 +44,11 @@ const checkTeachingAssignment = asyncHandler(async (req, res, next) => {
     query.semester = { $in: currentSession.activeSemesters };
   }
 
-  let assignment = await TeachingAssignment.findOne(query);
-
-  // Fallback: check if faculty has any active teaching assignment for this subject
-  if (!assignment) {
-    assignment = await TeachingAssignment.findOne({
-      facultyId,
-      subjectId,
-      status: { $ne: "archived" },
-    });
-  }
-
+  if (req.body?.offeringId) query._id = req.body.offeringId;
+  const matches = await TeachingAssignment.find(query).limit(2);
+  if (matches.length > 1 && !req.originalUrl.startsWith("/topic")) throw new ApiError(400, "Choose a course offering.");
+  const assignment = matches[0];
+  req.offering = assignment;
 
   if (!assignment) {
     throw new ApiError(

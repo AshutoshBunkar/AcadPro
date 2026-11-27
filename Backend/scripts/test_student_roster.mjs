@@ -1,0 +1,12 @@
+import assert from "node:assert/strict";
+import { parseRoster, identifiers } from "../utils/roster.js";
+const student = { mis: "001", email: " Demo@iiitp.ac.in ", name: "Test", department: "CSE", semester: 5 };
+assert.equal(parseRoster([student])[0].email, "demo@iiitp.ac.in");
+assert.equal(parseRoster([student])[0].mis, "001");
+assert.throws(() => parseRoster([student, { ...student, mis: "002" }]), /Duplicate/);
+assert.throws(() => parseRoster([student, { ...student, email: "other@iiitp.ac.in" }]), /Duplicate/);
+assert.throws(() => parseRoster([{ ...student, semester: 9 }]), /Invalid/);
+assert.equal(identifiers({}, "001"), null);
+assert.deepEqual(identifiers(" Demo@Outside.Example ", "001"), { email: "demo@outside.example", mis: "001" });
+assert.equal(identifiers("demo@@outside.example", "001"), null);
+console.log("8 roster assertions passed");

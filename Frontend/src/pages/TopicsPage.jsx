@@ -22,6 +22,7 @@ export default function TopicsPage() {
 
   const isArchived = searchParams.get("archived") === "true";
   const isReference = searchParams.get("reference") === "true";
+  const offeringId = searchParams.get("offeringId") || undefined;
   const semester = searchParams.get("semester");
 
   const topicsQuery = useQuery({
@@ -34,8 +35,8 @@ export default function TopicsPage() {
 
   const lectureCountQueries = useQueries({
     queries: topics.map((topic) => ({
-      queryKey: ["lectures", "topic", topic._id],
-      queryFn: () => getLecturesByTopic(topic._id),
+      queryKey: ["lectures", "topic", topic._id, offeringId],
+      queryFn: () => getLecturesByTopic(topic._id, offeringId),
       select: (res) => res.data.data.length,
       enabled: Boolean(topicsQuery.data),
     })),
@@ -147,16 +148,10 @@ export default function TopicsPage() {
                   whileHover={{ scale: 1.006 }}
                   transition={{ duration: 0.15 }}
                 >
-                  <div
+                  <div role="link" tabIndex={0} onKeyDown={e => { if (e.key === "Enter") e.currentTarget.click(); }}
                     onClick={() =>
                       navigate(
-                        `/topics/${topic._id}/lectures${
-                          isArchived
-                            ? `?archived=true&semester=${semester || ""}`
-                            : isReference
-                            ? `?reference=true&semester=${semester || ""}`
-                            : ""
-                        }`
+                        "/topics/" + topic._id + "/lectures?" + searchParams.toString()
                       )
                     }
                     className="p-4 sm:p-5 rounded-2xl bg-[#11141B] hover:bg-[#151922] border border-[#292F3B] hover:border-[#75D7FF]/40 cursor-pointer shadow-lg transition-all group flex items-center justify-between gap-4"

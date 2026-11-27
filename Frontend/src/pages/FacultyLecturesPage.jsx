@@ -14,11 +14,8 @@ import {
   Trash2,
   Calendar,
   BookOpen,
-  ArrowRight,
-  HelpCircle,
   CheckCircle2,
   X,
-  ExternalLink,
 } from "lucide-react";
 
 import AppLayout from "../components/layout/AppLayout";
@@ -51,7 +48,7 @@ export default function FacultyLecturesPage() {
     select: (res) => res.data.data,
   });
 
-  const assignments = profileQuery.data?.assignments || [];
+  const assignments = useMemo(() => profileQuery.data?.assignments || [], [profileQuery.data?.assignments]);
 
   // Available subjects for dropdown
   const assignedSubjects = useMemo(() => {
@@ -79,7 +76,7 @@ export default function FacultyLecturesPage() {
     select: (res) => res.data.data,
   });
 
-  const allLectures = lecturesQuery.data || [];
+  const allLectures = useMemo(() => lecturesQuery.data || [], [lecturesQuery.data]);
 
   // Delete Mutation
   const deleteMutation = useMutation({

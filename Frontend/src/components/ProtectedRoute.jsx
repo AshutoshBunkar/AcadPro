@@ -3,9 +3,10 @@ import { useAuth } from "../context/useAuth";
 import { DASHBOARD_PATH } from "../constants";
 
 export default function ProtectedRoute({ allowedRoles, children }) {
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, role, loading } = useAuth();
   const location = useLocation();
 
+  if (loading) return <p role="status">Loading your portal…</p>;
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }

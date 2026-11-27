@@ -9,6 +9,7 @@ node_modules/
 
 # Build output
 dist/
+demo-dist/
 build/
 
 # Logs
@@ -31,3 +32,4 @@ Thumbs.db
 # Prisma
 prisma/*.db
 prisma/*.db-journal
+.acadpro-media/

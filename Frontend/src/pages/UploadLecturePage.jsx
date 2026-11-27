@@ -23,7 +23,8 @@ export default function UploadLecturePage() {
   const location = useLocation();
   const queryClient = useQueryClient();
 
-  const [subjectId, setSubjectId] = useState(location.state?.subjectId || "");
+  const [selectedOffering, setSelectedOffering] = useState("");
+  const [progress, setProgress] = useState(0);
   const [topicId, setTopicId] = useState("");
   const [topicIdResetFor, setTopicIdResetFor] = useState(location.state?.subjectId || "");
   const [creatingTopic, setCreatingTopic] = useState(location.state?.mode === "topic");
@@ -41,7 +42,9 @@ export default function UploadLecturePage() {
     select: (res) => res.data.data,
   });
 
-  const subjects = (profileQuery.data?.assignments || []).map((a) => a.subjectId).filter(Boolean);
+  const offerings = profileQuery.data?.activeAssignments || [];
+  const offering = offerings.find(a => a._id === selectedOffering) || (!selectedOffering && offerings.find(a => a.subjectId?._id === location.state?.subjectId));
+  const subjectId = offering?.subjectId?._id || "";
 
   const topicsQuery = useQuery({
     queryKey: ["topics", subjectId],
@@ -72,7 +75,7 @@ export default function UploadLecturePage() {
   });
 
   const uploadMutation = useMutation({
-    mutationFn: (formData) => uploadLecture(formData),
+    mutationFn: (formData) => uploadLecture(formData, e => setProgress(Math.round((e.progress || 0) * 100))),
     onSuccess: () => {
       setSuccessMessage("Lecture video published and added to curriculum successfully.");
       setTitle("");
@@ -117,6 +120,8 @@ export default function UploadLecturePage() {
     }
 
     const formData = new FormData();
+    setProgress(0);
+    formData.append("offeringId", offering._id);
     formData.append("topicId", topicId);
     formData.append("title", title.trim());
     formData.append("description", description.trim());
@@ -185,8 +190,7 @@ export default function UploadLecturePage() {
             <AlertCircle className="w-5 h-5 text-[#F43F5E] flex-shrink-0" />
             <span>
               {formError ||
-                getErrorMessage(uploadMutation.error) ||
-                getErrorMessage(createTopicMutation.error)}
+                getErrorMessage(uploadMutation.error || createTopicMutation.error)}
             </span>
           </div>
         )}
@@ -200,15 +204,15 @@ export default function UploadLecturePage() {
                 Target Subject / Course
               </label>
               <select
-                value={subjectId}
-                onChange={(e) => setSubjectId(e.target.value)}
+                aria-label="Course offering" value={offering?._id || ""}
+                onChange={(e) => setSelectedOffering(e.target.value)}
                 required
                 className="w-full px-4 py-2.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-sm text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF] transition-all"
               >
                 <option value="">-- Choose Assigned Subject --</option>
-                {subjects.map((sub) => (
-                  <option key={sub._id} value={sub._id}>
-                    {sub.code} — {sub.name}
+                {offerings.map((a) => (
+                  <option key={a._id} value={a._id}>
+                    {a.subjectId.code} / {a.subjectId.name} / {a.academicYear} / Sem {a.semester} / {a.section}
                   </option>
                 ))}
               </select>
@@ -237,7 +241,7 @@ export default function UploadLecturePage() {
                         <input
                           type="text"
                           placeholder="Topic Name (e.g. Dynamic Programming)"
-                          value={newTopicName}
+                          aria-label="Topic name" value={newTopicName}
                           onChange={(e) => setNewTopicName(e.target.value)}
                           className="w-full px-3.5 py-2 rounded-xl bg-[#11141B] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
                         />
@@ -246,7 +250,7 @@ export default function UploadLecturePage() {
                         <input
                           type="number"
                           placeholder="Order / Unit (e.g. 1)"
-                          value={newTopicOrder}
+                          aria-label="Topic order" value={newTopicOrder}
                           onChange={(e) => setNewTopicOrder(e.target.value)}
                           className="w-full px-3.5 py-2 rounded-xl bg-[#11141B] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
                         />
@@ -264,7 +268,7 @@ export default function UploadLecturePage() {
                   </div>
                 ) : (
                   <select
-                    value={topicId}
+                    aria-label="Topic" value={topicId}
                     onChange={(e) => setTopicId(e.target.value)}
                     required
                     className="w-full px-4 py-2.5 rounded-xl bg-[#11141B] border border-[#292F3B] text-xs sm:text-sm text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF] transition-all"
@@ -289,7 +293,7 @@ export default function UploadLecturePage() {
                 type="text"
                 required
                 placeholder="e.g. Lecture 04: Bellman-Ford & Shortest Paths"
-                value={title}
+                aria-label="Lecture title" value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-sm text-[#F5F3EF] placeholder-[#A4ADBA]/50 focus:outline-none focus:border-[#75D7FF] focus:ring-1 focus:ring-[#75D7FF] transition-all"
               />
@@ -303,7 +307,7 @@ export default function UploadLecturePage() {
               <textarea
                 rows={4}
                 placeholder="Key concepts discussed, reading assignments, and textbook chapter references..."
-                value={description}
+                aria-label="Lecture notes" value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-sm text-[#F5F3EF] placeholder-[#A4ADBA]/50 focus:outline-none focus:border-[#75D7FF] focus:ring-1 focus:ring-[#75D7FF] transition-all resize-y"
               />
@@ -316,7 +320,7 @@ export default function UploadLecturePage() {
               </label>
               <div className="relative border-2 border-dashed border-[#292F3B] hover:border-[#75D7FF]/50 rounded-2xl p-6 text-center bg-[#191E28]/40 hover:bg-[#191E28]/70 transition-all cursor-pointer">
                 <input
-                  type="file"
+                  aria-label="Lecture video" type="file"
                   accept="video/*"
                   onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
@@ -359,7 +363,7 @@ export default function UploadLecturePage() {
               {uploadMutation.isPending ? (
                 <>
                   <span className="w-4 h-4 border-2 border-[#08090D] border-t-transparent rounded-full animate-spin"></span>
-                  <span>Uploading & Processing Video Lecture...</span>
+                  <span>{progress < 100 ? "Uploading " + progress + "%" : "Publishing recording…"}</span>
                 </>
               ) : (
                 <>

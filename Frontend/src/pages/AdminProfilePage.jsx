@@ -27,8 +27,6 @@ import { useAuth } from "../context/useAuth";
 import { getErrorMessage } from "../api/axios";
 import {
   ACTIVE_ACADEMIC_YEAR,
-  ACADEMIC_YEARS,
-  SEMESTER_OPTIONS,
   TERM_OPTIONS,
 } from "../constants";
 
@@ -122,8 +120,8 @@ export default function AdminProfilePage() {
   };
 
   const openSessionModal = () => {
-    setSessionYear(ACTIVE_ACADEMIC_YEAR);
-    setSessionTerm("ODD");
+    setSessionYear(profileQuery.data?.currentSession?.academicYear || ACTIVE_ACADEMIC_YEAR);
+    setSessionTerm(profileQuery.data?.currentSession?.term || "ODD");
     setSessionError("");
     setSessionSuccess("");
     setShowSessionModal(true);
@@ -133,18 +131,8 @@ export default function AdminProfilePage() {
   // Mutations
   const updateProfileMutation = useMutation({
     mutationFn: (payload) => updateAdminProfile(payload),
-    onSuccess: (res) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-profile"] });
-      const updated = res.data?.data;
-      if (updated) {
-        try {
-          const stored = localStorage.getItem("acadpro_user");
-          const parsed = stored ? JSON.parse(stored) : {};
-          localStorage.setItem("acadpro_user", JSON.stringify({ ...parsed, ...updated }));
-        } catch (e) {
-          console.error("Failed to sync admin user in localStorage", e);
-        }
-      }
       setShowEditModal(false);
       setToastMessage("Admin profile updated successfully.");
       setTimeout(() => setToastMessage(""), 4000);
@@ -701,17 +689,10 @@ export default function AdminProfilePage() {
                     <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">
                       Academic Year
                     </label>
-                    <select
-                      value={sessionYear}
+                    <input aria-label="Academic year" required pattern="[0-9]{4}-[0-9]{4}" placeholder="2026-2027" value={sessionYear}
                       onChange={(e) => setSessionYear(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
-                    >
-                      {ACADEMIC_YEARS.map((yr) => (
-                        <option key={yr} value={yr}>
-                          {yr}
-                        </option>
-                      ))}
-                    </select>
+                     />
                   </div>
 
                   <div>

@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 
 const studentsSchema = new mongoose.Schema({
+    sessionVersion: { type: Number, default: 0 },
+    invitationPending: { type: Boolean, default: false },
   mis: {
     type: String,
     required: true,
@@ -19,6 +21,8 @@ const studentsSchema = new mongoose.Schema({
     unique:true
   },
 
+  emailVerifiedAt: Date,
+
   password:{
     type:String,
     required:true
@@ -34,6 +38,7 @@ const studentsSchema = new mongoose.Schema({
     required: true
   },
 
+  section: { type: String, default: "A" },
   currentSemester: {
     type: Number,
     min: 1,

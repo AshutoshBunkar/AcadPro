@@ -4,6 +4,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { ROLES } from "./constants";
 
 import LoginPage from "./pages/LoginPage";
+import AccountLinkPage from "./pages/AccountLinkPage";
 import SignupPage from "./pages/SignupPage";
 import StudentDashboard from "./pages/StudentDashboard";
 import TopicsPage from "./pages/TopicsPage";
@@ -24,6 +25,8 @@ export default function App() {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/account/:purpose" element={<AccountLinkPage />} />
+        <Route path="/activate" element={<SignupPage activation />} />
         <Route path="/signup" element={<SignupPage />} />
 
         <Route
@@ -53,7 +56,7 @@ export default function App() {
         <Route
           path="/lectures/:lectureId"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.STUDENT, ROLES.FACULTY]}>
+            <ProtectedRoute allowedRoles={[ROLES.STUDENT, ROLES.FACULTY, ROLES.ADMIN]}>
               <LecturePlayerPage />
             </ProtectedRoute>
           }

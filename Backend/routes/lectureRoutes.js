@@ -1,6 +1,7 @@
+import { receiveLecture, cleanupUpload } from "../middlewares/lectureUpload.js";
 import express from "express";
 import {
-  getLectures,
+  streamLecture, shareReference, getLectures,
   getSingleLecture,
   uploadLecture,
   getFacultyUploadedLectures,
@@ -16,9 +17,11 @@ Router.get("/my-lectures", verifyJWT, authorize("faculty"), getFacultyUploadedLe
 
 Router.get("/topic/:topicId", verifyJWT, getLectures);
 
+Router.get("/:lectureId/media", verifyJWT, streamLecture);
+Router.put("/:lectureId/reference", verifyJWT, authorize("admin"), shareReference);
 Router.get("/:lectureId", verifyJWT, getSingleLecture);
 
-Router.post("/upload", verifyJWT, authorize("faculty"), checkTeachingAssignment, uploadLecture);
+Router.post("/upload", verifyJWT, authorize("faculty"), receiveLecture, cleanupUpload, checkTeachingAssignment, uploadLecture);
 
 Router.delete("/:lectureId", verifyJWT, authorize("faculty", "admin"), deleteLecture);
 

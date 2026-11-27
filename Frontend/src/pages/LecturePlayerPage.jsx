@@ -1,3 +1,4 @@
+import { apiBase } from "../api/axios";
 import { useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -49,7 +50,8 @@ function VideoPlayer({ lecture }) {
       <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-[#292F3B]">
         <video
           ref={videoRef}
-          src={buildQualityUrl(lecture.videoUrl, quality)}
+          crossOrigin={lecture.mediaType ? "use-credentials" : undefined}
+            src={lecture.mediaType ? apiBase + lecture.videoUrl : buildQualityUrl(lecture.videoUrl, quality)}
           poster={lecture.thumbnailUrl}
           controls
           onLoadedMetadata={handleLoadedMetadata}
@@ -424,6 +426,9 @@ export default function LecturePlayerPage() {
               )}
 
               {/* Comments List */}
+              {commentsQuery.isError && (
+                <ErrorState error={commentsQuery.error} onRetry={commentsQuery.refetch} />
+              )}
               {commentsQuery.isLoading && (
                 <div className="space-y-3">
                   {[1, 2].map((i) => (

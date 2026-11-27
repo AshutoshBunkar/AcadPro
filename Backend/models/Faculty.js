@@ -3,6 +3,9 @@ import bcrypt from "bcrypt";
 
 const facultySchema = new mongoose.Schema(
   {
+    sessionVersion: { type: Number, default: 0 },
+    invitationPending: { type: Boolean, default: false },
+    emailVerifiedAt: Date,
     email: {
       type: String,
       required: true,

@@ -40,7 +40,7 @@ export default function LoginPage() {
   const activeTab = TABS.find((t) => t.value === tab);
 
   const mutation = useMutation({
-    mutationFn: () => activeTab.loginFn({ email, password }),
+    mutationFn: () => activeTab.loginFn(tab === ROLES.STUDENT && !email.includes("@") ? { mis: email.trim(), password } : { email: email.trim(), password }),
     onSuccess: (res) => {
       login(tab, res.data.data);
       navigate(DASHBOARD_PATH[tab], { replace: true });
@@ -76,7 +76,7 @@ export default function LoginPage() {
             <GraduationCap className="w-7 h-7 text-[#75D7FF]" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-[#F5F3EF] tracking-tight">
-            Acade<span className="text-[#75D7FF]">X</span>
+            Acad<span className="text-[#75D7FF]">Pro</span>
           </h1>
           <p className="text-xs sm:text-sm text-[#A4ADBA] mt-1.5 font-medium">
             Sign in to access your lectures, modules & academic portal
@@ -120,13 +120,13 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Field */}
             <div>
-              <label className="block text-xs font-semibold text-[#A4ADBA] mb-1.5">
-                College Email
+              <label htmlFor="login-identity" className="block text-xs font-semibold text-[#A4ADBA] mb-1.5">
+                {tab === ROLES.STUDENT ? "Email or MIS" : "Email"}
               </label>
               <div className="relative flex items-center">
                 <Mail className="w-4 h-4 text-[#A4ADBA] absolute left-3.5 pointer-events-none" />
                 <input
-                  type="email"
+                  id="login-identity" type={tab === ROLES.STUDENT ? "text" : "email"} autoComplete="username"
                   required
                   placeholder={
                     tab === ROLES.STUDENT
@@ -143,14 +143,14 @@ export default function LoginPage() {
             {/* Password Field */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-[#A4ADBA]">
+                <label htmlFor="login-password" className="block text-xs font-semibold text-[#A4ADBA]">
                   Password
                 </label>
               </div>
               <div className="relative flex items-center">
                 <Lock className="w-4 h-4 text-[#A4ADBA] absolute left-3.5 pointer-events-none" />
                 <input
-                  type={showPassword ? "text" : "password"}
+                  id="login-password" autoComplete="current-password" type={showPassword ? "text" : "password"}
                   required
                   placeholder="Enter your password"
                   value={password}
@@ -214,7 +214,11 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Demo / Assistance Notice */}
+            <nav aria-label="Account help" className="flex flex-wrap justify-center gap-3 text-xs text-[#75D7FF]">
+              <RouterLink to="/account/reset">Forgot password?</RouterLink>
+              <RouterLink to="/account/confirm">Verify existing account</RouterLink>
+              {tab === ROLES.FACULTY && <RouterLink to="/account/invite">Resend invitation</RouterLink>}
+            </nav>
             <div className="pt-4 mt-4 border-t border-[#292F3B] text-center">
               <span className="inline-flex items-center gap-1.5 text-[11px] text-[#A4ADBA]/80">
                 <Sparkles className="w-3 h-3 text-[#FF3D9A]" />

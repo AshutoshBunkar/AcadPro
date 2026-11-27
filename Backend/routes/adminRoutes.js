@@ -1,3 +1,4 @@
+import { Lecture } from "../models/Lecture.js";
 import express from "express";
 
 import {
@@ -36,6 +37,9 @@ import { authorize } from "../middlewares/rolemiddleware.js";
 
 const Router = express.Router();
 
+Router.get("/reference-lectures", verifyJWT, authorize("admin"), async (req, res) => {
+  res.json({ data: await Lecture.find({ offeringId: { $ne: null } }).select("title department offeringId referenceSemesters").populate("offeringId", "academicYear semester").sort({ createdAt: -1 }) });
+});
 Router.post("/login", loginAdmin);
 
 // Admin Profile & System Management

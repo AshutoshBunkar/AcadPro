@@ -1,7 +1,9 @@
+import mongoose from "mongoose";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import jwt from "jsonwebtoken";
+import { deliverSession } from "../utils/browserSession.js";
+import { sessionToken } from "../utils/accountAccess.js";
 import { Faculty } from "../models/Faculty.js";
 import { TeachingAssignment } from "../models/TeachingAssignment.js";
 import { StudentEnrollment } from "../models/StudentEnrollment.js";
@@ -17,6 +19,11 @@ import { SubjectRequest } from "../models/SubjectRequest.js";
 import { AuditLog } from "../models/AuditLog.js";
 import { ACTIVE_ACADEMIC_YEAR } from "../utils/academicConfig.js";
 
+
+function assignedEnrollment(assignment) {
+  return { $or: [{ teachingAssignmentId: assignment._id },
+    { teachingAssignmentId: null, facultyId: assignment.facultyId }] };
+}
 
 // Login Logic
 const loginFaculty = asyncHandler(async (req, res) => {
@@ -39,11 +46,7 @@ const loginFaculty = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid faculty credentials");
   }
 
-  const token = jwt.sign(
-    { id: faculty._id, role: "faculty" },
-    process.env.JWT_SECRET,
-    { expiresIn: "7d" }
-  );
+  const token = sessionToken(faculty, "faculty");
 
   const loggedInFaculty = await Faculty.findById(faculty._id).select("-password");
 
@@ -52,7 +55,7 @@ const loginFaculty = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { faculty: loggedInFaculty, token },
+        { faculty: loggedInFaculty, ...deliverSession(req, res, token) },
         "Faculty logged in successfully"
       )
     );
@@ -84,6 +87,7 @@ const getFacultyProfile = asyncHandler(async (req, res) => {
         academicYear: a.academicYear,
         semester: a.semester,
         ...(a.section ? { section: a.section } : {}),
+        ...assignedEnrollment(a),
         status: { $in: ["enrolled", "active"] },
       });
 
@@ -92,6 +96,7 @@ const getFacultyProfile = asyncHandler(async (req, res) => {
         academicYear: a.academicYear,
         semester: a.semester,
         ...(a.section ? { section: a.section } : {}),
+        ...assignedEnrollment(a),
       });
 
       return {
@@ -105,14 +110,16 @@ const getFacultyProfile = asyncHandler(async (req, res) => {
   const cleanAssignments = assignments.filter(Boolean);
 
   // Active assignments belong to current academic year 2026-2027 and are not archived
+  const currentSession = await AcademicSession.findOne();
+  const inTerm = a => a.status !== "archived" && a.academicYear === currentSession?.academicYear && currentSession.activeSemesters.includes(a.semester);
   const activeAssignments = cleanAssignments.filter(
-    (a) => a.status !== "archived" && a.academicYear === ACTIVE_ACADEMIC_YEAR
+    inTerm
   );
   const pastAssignments = cleanAssignments.filter(
-    (a) => a.status === "archived" || a.academicYear !== ACTIVE_ACADEMIC_YEAR
+    a => !inTerm(a)
   );
 
-  const currentSession = await AcademicSession.findOne();
+
 
   // Compute real engagement stats
   const lecturesUploaded = await Lecture.countDocuments({ uploadedBy: facultyId });
@@ -193,6 +200,7 @@ const getFacultyAssignedCourses = asyncHandler(async (req, res) => {
         academicYear: a.academicYear,
         semester: a.semester,
         ...(a.section ? { section: a.section } : {}),
+        ...assignedEnrollment(a),
         status: { $in: ["enrolled", "active"] },
       });
 
@@ -201,11 +209,12 @@ const getFacultyAssignedCourses = asyncHandler(async (req, res) => {
         academicYear: a.academicYear,
         semester: a.semester,
         ...(a.section ? { section: a.section } : {}),
+        ...assignedEnrollment(a),
       });
 
       const topics = await Topic.find({ subjectId: sub._id });
       const topicIds = topics.map((t) => t._id);
-      const lectureCount = await Lecture.countDocuments({ topicId: { $in: topicIds } });
+      const lectureCount = await Lecture.countDocuments({ offeringId: a._id });
 
       return {
         _id: a._id,
@@ -249,17 +258,9 @@ const getFacultyCourseRoster = asyncHandler(async (req, res) => {
   if (semester && semester !== "all") assignmentQuery.semester = Number(semester);
   if (section && section !== "all") assignmentQuery.section = section.trim().toUpperCase();
 
-  let assignment = await TeachingAssignment.findOne(assignmentQuery)
+  const assignment = await TeachingAssignment.findOne(assignmentQuery)
     .populate("subjectId")
     .populate("semesterId");
-
-  // Fallback: if term was omitted, check if faculty is assigned to this subject at all
-  if (!assignment) {
-    assignment = await TeachingAssignment.findOne({ facultyId, subjectId })
-      .populate("subjectId")
-      .populate("semesterId")
-      .sort({ academicYear: -1, semester: -1 });
-  }
 
   if (!assignment) {
     throw new ApiError(
@@ -278,6 +279,7 @@ const getFacultyCourseRoster = asyncHandler(async (req, res) => {
     subjectId,
     academicYear: targetYear,
     semester: targetSem,
+    ...assignedEnrollment(assignment),
   };
   if (targetSection) {
     enrollmentFilter.section = targetSection;
@@ -302,6 +304,7 @@ const getFacultyCourseRoster = asyncHandler(async (req, res) => {
     subjectId,
     academicYear: targetYear,
     semester: targetSem,
+    ...assignedEnrollment(assignment),
     ...(targetSection ? { section: targetSection } : {}),
   });
 
@@ -309,6 +312,7 @@ const getFacultyCourseRoster = asyncHandler(async (req, res) => {
     subjectId,
     academicYear: targetYear,
     semester: targetSem,
+    ...assignedEnrollment(assignment),
     ...(targetSection ? { section: targetSection } : {}),
     status: { $in: ["enrolled", "active"] },
   });
@@ -317,6 +321,7 @@ const getFacultyCourseRoster = asyncHandler(async (req, res) => {
     subjectId,
     academicYear: targetYear,
     semester: targetSem,
+    ...assignedEnrollment(assignment),
     ...(targetSection ? { section: targetSection } : {}),
     status: "completed",
   });
@@ -325,6 +330,7 @@ const getFacultyCourseRoster = asyncHandler(async (req, res) => {
     subjectId,
     academicYear: targetYear,
     semester: targetSem,
+    ...assignedEnrollment(assignment),
     ...(targetSection ? { section: targetSection } : {}),
     status: { $in: ["dropped", "archived"] },
   });
@@ -413,12 +419,7 @@ const exportFacultyCourseRoster = asyncHandler(async (req, res) => {
   if (semester && semester !== "all") assignmentQuery.semester = Number(semester);
   if (section && section !== "all") assignmentQuery.section = section.trim().toUpperCase();
 
-  let assignment = await TeachingAssignment.findOne(assignmentQuery).populate("subjectId");
-  if (!assignment) {
-    assignment = await TeachingAssignment.findOne({ facultyId, subjectId })
-      .populate("subjectId")
-      .sort({ academicYear: -1, semester: -1 });
-  }
+  const assignment = await TeachingAssignment.findOne(assignmentQuery).populate("subjectId");
 
   if (!assignment) {
     throw new ApiError(
@@ -436,6 +437,7 @@ const exportFacultyCourseRoster = asyncHandler(async (req, res) => {
     subjectId,
     academicYear: targetYear,
     semester: targetSem,
+    ...assignedEnrollment(assignment),
     ...(targetSection ? { section: targetSection } : {}),
   };
 
@@ -573,6 +575,8 @@ const changeFacultyPassword = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Current password is incorrect");
   }
 
+  faculty.sessionVersion = (faculty.sessionVersion || 0) + 1;
+
   faculty.password = newPassword;
   await faculty.save();
 
@@ -600,7 +604,7 @@ const requestSubject = asyncHandler(async (req, res) => {
   }
 
   const targetYear = Math.ceil(targetSemester / 2);
-  const targetAcademicYear = (academicYear || ACTIVE_ACADEMIC_YEAR).trim();
+  const targetAcademicYear = (academicYear || (await AcademicSession.findOne())?.academicYear || ACTIVE_ACADEMIC_YEAR).trim();
   const targetSection = (section || "A").trim().toUpperCase();
   const targetCredits = Number(credits) > 0 ? Number(credits) : 3;
 
@@ -630,67 +634,49 @@ const requestSubject = asyncHandler(async (req, res) => {
     }
   }
 
-  // Check if already requested and pending for the same term and offering
-  const existingRequest = await SubjectRequest.findOne({
-    code: normalizedCode,
-    academicYear: targetAcademicYear,
-    semester: targetSemester,
-    section: targetSection,
-    status: "pending",
+  const result = await mongoose.connection.transaction(async session => {
+    const key = { code: normalizedCode, academicYear: targetAcademicYear, semester: targetSemester, section: targetSection, status: "pending" };
+    const existing = await SubjectRequest.findOne(key).session(session);
+    if (existing) {
+      if (String(existing.facultyId) !== String(facultyId)) throw new ApiError(409, "An offering request is already pending.");
+      return { subjectRequest: existing, created: false };
+    }
+    const [subjectRequest] = await SubjectRequest.create([{ ...key, facultyId, name: normalizedName, department: resolvedDept,
+      year: targetYear, credits: targetCredits, program: "B.Tech" }], { session });
+
+    // Notify all Admins in the institution
+    const admins = await Admin.find({}).session(session);
+    if (admins.length > 0) {
+      await Notification.create(
+        admins.map((admin) => ({
+          recipient: admin._id,
+          recipientRole: "admin",
+          title: `Course Request: ${normalizedCode}`,
+          message: `Prof. ${faculty.name} (${faculty.department || resolvedDept}) has requested a course offering: "${normalizedName}" (${normalizedCode}) for Semester ${targetSemester} Section ${targetSection} (${resolvedDept}).`,
+          type: "assignment",
+          link: "/admin/dashboard",
+        })), { session }
+      );
+    }
+
+    // Record audit log
+    await AuditLog.create([{
+      action: "SUBJECT_REQUESTED",
+      category: "CURRICULUM",
+      details: `Faculty ${faculty.name} (${faculty.email}) requested course offering: ${normalizedCode} - ${normalizedName} (Sem ${targetSemester}, Sec ${targetSection}, ${resolvedDept})`,
+      actor: faculty.name,
+      actorEmail: faculty.email,
+      ipAddress: req.ip || "127.0.0.1",
+      severity: "INFO",
+      status: "SUCCESS",
+    }], { session });
+    return { subjectRequest, created: true };
   });
 
-  if (existingRequest) {
-    throw new ApiError(
-      409,
-      `A subject addition request for ${normalizedCode} in AY ${targetAcademicYear} Semester ${targetSemester} (Section ${targetSection}) is already pending review with the Administrator.`
-    );
-  }
-
-  const subjectRequest = await SubjectRequest.create({
-    facultyId,
-    code: normalizedCode,
-    name: normalizedName,
-    department: resolvedDept,
-    semester: targetSemester,
-    year: targetYear,
-    academicYear: targetAcademicYear,
-    section: targetSection,
-    credits: targetCredits,
-    program: "B.Tech",
-    status: "pending",
-  });
-
-  // Notify all Admins in the institution
-  const admins = await Admin.find({});
-  if (admins.length > 0) {
-    await Notification.create(
-      admins.map((admin) => ({
-        recipient: admin._id,
-        recipientRole: "admin",
-        title: `Course Request: ${normalizedCode}`,
-        message: `Prof. ${faculty.name} (${faculty.department || resolvedDept}) has requested a course offering: "${normalizedName}" (${normalizedCode}) for Semester ${targetSemester} Section ${targetSection} (${resolvedDept}).`,
-        type: "assignment",
-        link: "/admin/dashboard",
-      }))
-    );
-  }
-
-  // Record audit log
-  await AuditLog.create({
-    action: "SUBJECT_REQUESTED",
-    category: "CURRICULUM",
-    details: `Faculty ${faculty.name} (${faculty.email}) requested course offering: ${normalizedCode} - ${normalizedName} (Sem ${targetSemester}, Sec ${targetSection}, ${resolvedDept})`,
-    actor: faculty.name,
-    actorEmail: faculty.email,
-    ipAddress: req.ip || "127.0.0.1",
-    severity: "INFO",
-    status: "SUCCESS",
-  });
-
-  return res.status(201).json(
+  return res.status(result.created ? 201 : 200).json(
     new ApiResponse(
       201,
-      subjectRequest,
+      result.subjectRequest,
       `Subject request for ${normalizedCode} (Semester ${targetSemester}, Section ${targetSection}) submitted successfully to the Administrator.`
     )
   );

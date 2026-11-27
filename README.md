@@ -39,7 +39,7 @@ AcadPro provides a role-governed portal that structures all recorded instruction
 1. **Curriculum Hierarchy:** Organizes learning resources cleanly into Subjects, Topics, and numbered video lectures.
 2. **Access Control & Privacy:** Restricts access to verified college members (`@iiitp.ac.in`) with role-based dashboard views.
 3. **Faculty Course Requests:** Enables faculty to formally propose course offerings with transactional administrator review and automatic student enrollment.
-4. **Adaptive Media Delivery:** Delivers high-resolution video streams (up to 1080p) via Cloudinary with dynamic thumbnails and chunked upload handling.
+4. **Private Lecture Playback:** Serves new recordings from private media storage with offering-based access and byte-range playback.
 5. **Threaded Q&A Discussions:** Allows students to post academic questions on specific lectures, while restricting official answers exclusively to the verified course instructor.
 
 ---
@@ -51,7 +51,7 @@ AcadPro provides a role-governed portal that structures all recorded instruction
 - **Build Tool:** Vite 8 (`vite` ^8.2.0)
 - **Routing:** React Router DOM v7 (`react-router-dom` ^7.18.2) with declarative `ProtectedRoute` guards
 - **Server State & Caching:** TanStack React Query v5 (`@tanstack/react-query` ^5.102.8) with 30s background polling
-- **HTTP Client:** Axios (`axios` ^1.19.0) with automatic JWT `Bearer` token injection
+- **HTTP Client:** Axios with credentialed requests for the browser's HttpOnly session cookie
 - **UI Components & Icons:** Material UI v9 (`@mui/material`, `@emotion/react`), Lucide React (`lucide-react` ^1.55.0)
 - **Animations:** Framer Motion (`framer-motion` ^13.1.1)
 
@@ -65,7 +65,7 @@ AcadPro provides a role-governed portal that structures all recorded instruction
 
 ### Cloud Infrastructure & Database
 - **Database:** MongoDB Atlas (Replica Set cluster supporting multi-document ACID transactions)
-- **Media CDN:** Cloudinary Programmable Media API (`cloudinary` ^2.10.0) for chunked video ingestion, thumbnail derivation, and streaming
+- **Media storage:** Private filesystem storage for new uploads. Cloudinary settings support previously stored assets.
 
 ---
 
@@ -93,9 +93,9 @@ AcadPro implements strict Role-Based Access Control (RBAC) across three distinct
 ## ⚡ Core Workflows
 
 ### 1. Student Signup and Authentication
-- Students register using full name, unique MIS number, college email (`@iiitp.ac.in`), password, department (`CSE` / `ECE`), and starting year.
-- Upon signup, the backend hashes the password with `bcrypt` (10 rounds) and computes `currentSemester = (year - 1) * 2 + 1`.
-- Students log in using either their MIS number or email. The backend issues a 7-day signed JWT containing `{ id, role: "student" }`.
+- Students enter their MIS number and email. The approved roster supplies their department and semester.
+- The student sets a password after opening a 15-minute activation link sent to the roster address.
+- Students sign in using their MIS number or email. Browser sessions expire after eight hours and password recovery revokes prior sessions.
 
 ### 2. Faculty Course Requests and Administrative Approval
 1. **Proposal:** A faculty member opens the "Request Course Offering" modal on their dashboard, specifying course code, subject name, department, semester (`1st, 3rd, 5th, or 7th`), section, and credits.
@@ -110,11 +110,10 @@ AcadPro implements strict Role-Based Access Control (RBAC) across three distinct
    - Updates `SubjectRequest` status to `approved` and dispatches an approval notification to the faculty.
    - Commits the transaction atomically.
 
-### 3. Lecture Studio & Adaptive Streaming
-1. **Upload:** An assigned faculty member selects an active subject and topic, enters lecture title and description, and selects an MP4/MKV video file up to 500MB.
-2. **Ingestion:** `express-fileupload` stores the temp file in the OS temp directory; the backend streams it to Cloudinary in 6MB chunks (`cloudinary.uploader.upload_large`).
-3. **Asset Generation:** Cloudinary returns a secure URL; the backend derives the thumbnail URL (`.jpg` transformation) and duration, saving the `Lecture` record and cleaning up local disk files.
-4. **Playback:** Students watch the video with on-the-fly resolution switching (360p, 480p, 720p, 1080p, auto) powered by Cloudinary transformation URLs.
+### 3. Lecture publication and playback
+1. Assigned faculty select a course offering and topic, enter the title, and upload a video up to 500 MB.
+2. The backend moves the temporary upload to private storage and saves its lecture metadata against the same offering.
+3. The playback route checks each request against enrollment, faculty assignment, or the approved reference audience. It supports seeking via HTTP byte ranges.
 
 ### 4. Course Rosters and CSV Export
 - Faculty members can click "View Roster" on any of their active course cards to open the Course Roster Drawer.
@@ -130,7 +129,7 @@ AcadPro implements strict Role-Based Access Control (RBAC) across three distinct
 
 ## 🏛 Academic Structure & Configuration
 
-AcadPro is centrally configured for the **2026–2027 Academic Year**:
+The synthetic demo starts in the **2026-2027 Academic Year** with the odd term:
 
 ```
 Academic Year: 2026–2027 (Autumn / Odd Term)
@@ -140,8 +139,7 @@ Academic Year: 2026–2027 (Autumn / Odd Term)
 └── 7th Semester ── B.Tech Year 4 (CSE / ECE)
 ```
 
-- **Semester Labels:** The UI strictly presents options as `1st Semester`, `3rd Semester`, `5th Semester`, and `7th Semester` without embedding redundant year numbers into semester selection fields.
-- **Centralized Config:** Maintained in `Backend/utils/academicConfig.js` and `Frontend/src/constants.js`.
+- Admins can change the active academic year and term in the portal. Historical offerings and recordings keep their original academic year and semester.
 
 ---
 
@@ -240,10 +238,26 @@ AcadPro/
 ## 🚀 Installation & Local Setup
 
 ### Prerequisites
-- **Node.js:** v18.0.0 or higher (Node.js v22.x LTS recommended)
+- **Node.js:** v22.12 or later on the Node.js 22 release line
 - **npm:** v9.0.0 or higher
-- **MongoDB Atlas:** An accessible MongoDB cluster (Replica Set enabled for transactions)
-- **Cloudinary:** A free Cloudinary account for media uploads
+- **MongoDB:** A replica set for development, or a local MongoDB 8.0 `mongod` executable for the disposable demo and integration suite
+
+### Run the local synthetic demo
+
+From the repository root, install the dependencies and build the demo once.
+
+```bash
+npm ci --prefix Frontend
+npm ci --prefix Backend
+npm --prefix Frontend run build:demo
+npm --prefix Backend run demo
+```
+
+If `mongod` is outside `PATH`, set `MONGOD_BIN` to its full executable path before starting the demo. The demo runs at `http://localhost:4180` and starts a disposable local replica set, private media directory, and simulated inbox. Use `Ctrl+C` to stop it. Fixture data is discarded when it shuts down.
+
+1. Open `/signup` and request activation for MIS `0001` and `demo.student@iiitp.ac.in`. Open `/demo-inbox`, select the newest link, set a password, and sign in. The student's Current tab should show Programming Basics (`CS101`).
+2. In a separate browser profile, sign in as `faculty@example.test` using `Fixture-only-pass42`. In Upload Lecture, select `CS101`, choose Getting started, and publish a short MP4. Refresh the student dashboard and play the recording.
+3. Sign in as `admin@example.test` using `Fixture-only-pass42`. Preview and confirm a promotion for Demo Student to semester 3. Refresh the student dashboard to see Data Structures (`CS301`) in Current and the recording under Archived.
 
 ### 1. Clone the Repository
 ```bash
@@ -258,15 +272,7 @@ Create a `.env` file inside the `Backend/` directory:
 cd Backend
 ```
 
-Add your environment parameters:
-```env
-PORT=10000
-MONGO_DB_URL=mongodb+srv://<username>:<password>@cluster0.example.mongodb.net/AcadPro?retryWrites=true&w=majority
-JWT_SECRET=your_jwt_secret_key_here
-CLOUD_NAME=your_cloudinary_cloud_name
-API_KEY=your_cloudinary_api_key
-API_SECRET=your_cloudinary_api_secret
-```
+Use [Backend/.env.example](Backend/.env.example) as the template. Set the development MongoDB replica-set URI and a session secret. Configure the email provider and sender to exercise delivery outside the synthetic demo. See [Student activation pilot](Backend/STUDENT_ACTIVATION.md) for roster import and verification rollout.
 
 ### 3. Install Backend Dependencies & Start Server
 ```bash
@@ -314,15 +320,19 @@ The application will launch on: `http://localhost:5173`.
 | `PORT` | Optional | `10000` | Port on which the Express server listens |
 | `MONGO_DB_URL` | **Required** | — | MongoDB Atlas connection string (Must support replica set transactions) |
 | `JWT_SECRET` | **Required** | — | Cryptographic secret for signing JWT access tokens |
-| `CLOUD_NAME` | **Required** | — | Cloudinary cloud account name |
-| `API_KEY` | **Required** | — | Cloudinary API Key |
-| `API_SECRET` | **Required** | — | Cloudinary API Secret |
+| `APP_ENV` | Deployment | `development` | Set `staging` or `production` to enforce deployment configuration |
+| `PUBLIC_APP_URL` | Deployed | `http://localhost:5173` | Frontend origin for activation links and cookie requests |
+| `PRIVATE_MEDIA_DIR` | Deployed | `.acadpro-media` | Private storage path for new recordings |
+| `RESEND_API_KEY`, `ACTIVATION_FROM` | Deployed | — | Backend email credentials and verified sender |
+| `STAGING_MAILBOX` | Staging | — | Test inbox for all staging challenge messages |
+| `VERIFY_ROLES`, `TRUST_PROXY_HOPS` | Optional | Empty, `0` | Roles subject to email verification and trusted proxy count |
+| `CLOUD_NAME`, `API_KEY`, `API_SECRET` | Legacy media | — | Cloudinary settings for previously stored assets |
 
 ### Frontend (`Frontend/.env`)
 
 | Variable Name | Required | Default | Description |
 |---|:---:|:---:|---|
-| `VITE_API_BASE_URL` | Optional | `http://localhost:10000` | Base URL pointing to the backend Express server |
+| `VITE_API_BASE_URL` | Optional | Development `http://localhost:10000`, deployed same origin | Base URL pointing to the backend Express server |
 
 > [!CAUTION]
 > Never commit `.env` files containing real production passwords, database connection strings, or Cloudinary credentials to version control. Both `.gitignore` files are pre-configured to exclude `.env`.
@@ -368,7 +378,7 @@ AcadPro utilizes **14 collections** in MongoDB Atlas:
 
 ## 🧪 Automated Verification & Test Suites
 
-The codebase includes executable integration test suites that validate system behavior directly against the database:
+`npm --prefix Backend test` creates a disposable MongoDB replica set for activation, academic workflows, legacy scripts, and a cold database restore check. Set `MONGOD_BIN` if needed. `npm --prefix Backend run test:unit` runs the account and roster unit tests without MongoDB. The Portal checks workflow runs the backend suite and frontend build in CI.
 
 ### 1. Comprehensive Academic Workflow Suite
 Tests 14 cross-module scenarios including faculty request submission, transactional approval, catalog integrity, student dashboard availability, 409 duplicate rejection, approval idempotency, request rejection, cohort promotion, historical roster retention, and simulated transaction failure rollback.
@@ -377,7 +387,6 @@ Tests 14 cross-module scenarios including faculty request submission, transactio
 cd Backend
 node scripts/verify_full_academic_workflow.js
 ```
-**Current Status:** `TOTAL TESTS RUN: 14 | PASSED: 14 | FAILED: 0 (100% Success)`
 
 ### 2. Subject Request & Notification Suite
 Validates the course proposal flow, real-time admin alert generation, directory listing, approval notification dispatch, and duplicate request prevention.
@@ -386,7 +395,6 @@ Validates the course proposal flow, real-time admin alert generation, directory 
 cd Backend
 node scripts/test_subject_request_flow.js
 ```
-**Current Status:** `RESULTS: 10 PASSED, 0 FAILED (100% Success)`
 
 ### 3. Live Database Inspector
 Inspects live collections, verifying active academic sessions, semester records, catalog subjects, and student enrollments.
@@ -404,17 +412,15 @@ node scripts/inspect_db.js
 - **Cause:** MongoDB is running in standalone mode without a replica set.
 - **Solution:** Connect to a MongoDB Atlas cluster, which operates as a replica set by default.
 
-### 2. Cloudinary Upload Failure (`Video upload to Cloudinary failed`)
-- **Cause:** Invalid or missing `CLOUD_NAME`, `API_KEY`, or `API_SECRET` in `Backend/.env`.
-- **Solution:** Double-check your Cloudinary dashboard credentials. Note that variable names must match `CLOUD_NAME`, `API_KEY`, and `API_SECRET`.
+### 2. Lecture upload failure
+- Check that the faculty member has an active offering for the selected topic and semester. Verify that the backend can write to `PRIVATE_MEDIA_DIR` and that the video uses a supported format.
 
 ### 3. Network Connection Error on Frontend (`Cannot reach the server`)
 - **Cause:** The backend is not running, or running on a different port than expected by the frontend.
 - **Solution:** Verify the backend is listening on port 10000. Check `VITE_API_BASE_URL` in `Frontend/.env`.
 
-### 4. Student Signup Gating (`Only IIIT Pune college emails are allowed to register`)
-- **Cause:** Attempting to register a student with an email that does not end in `@iiitp.ac.in`.
-- **Solution:** Use an institutional email address (e.g. `rohan.gupta@iiitp.ac.in`).
+### 4. Student activation email
+- Use the email address and MIS from the approved roster. Any email domain is accepted.
 
 ### 5. Video File Size Rejection (`Video file size exceeds maximum allowed limit`)
 - **Cause:** The uploaded video exceeds the 500MB limit.
