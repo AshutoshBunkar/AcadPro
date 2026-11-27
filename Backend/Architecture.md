@@ -68,8 +68,9 @@ Student ──┐                    Admin
 
 **Auth hashing:** `Admin` and `Faculty` hash passwords automatically via a Mongoose `pre("save")` hook. `Student` hashes manually inside the signup controller. All three models expose an `isPasswordCorrect(password)` instance method wrapping `bcrypt.compare`.
 
+Students self-register and verify their email before choosing a password. Any email domain is accepted.
+
 **Not built (deliberately shelved):**
-- Student activation matches the email address and MIS against the approved roster. Any email domain is accepted.
 - `WatchHistory` — explicitly deferred to v2.
 
 ---

@@ -13,7 +13,11 @@ import {
 import { verifyJWT } from "../middlewares/authmiddleware.js";
 import { authorize } from "../middlewares/rolemiddleware.js";
 
+import { requestSignup } from "../controllers/accountActions.js";
+import { limitActivation } from "../middlewares/activationLimit.js";
+
 const Router = express.Router();
+Router.post("/signup", limitActivation, requestSignup("faculty"));
 
 Router.post("/login", loginFaculty);
 Router.get("/profile", verifyJWT, authorize("faculty"), getFacultyProfile);

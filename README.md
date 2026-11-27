@@ -75,7 +75,7 @@ AcadPro implements strict Role-Based Access Control (RBAC) across three distinct
 
 | Capability / Action | Student | Faculty | Admin |
 |---|:---:|:---:|:---:|
-| **Account Self-Registration** | ✅ (via `@iiitp.ac.in`) | ❌ (Created by Admin) | ❌ (Bootstrapped) |
+| **Account Self-Registration** | ✅ (email verification) | ✅ (email verification) | ❌ (Bootstrapped) |
 | **Browse Active Semester Courses** | ✅ (Enrolled only) | ✅ (Assigned only) | ✅ (All courses) |
 | **Watch Video Lectures & Change Quality** | ✅ | ✅ | ✅ |
 | **Post Questions / Comments** | ✅ (Active terms only) | ❌ (Replies only) | ❌ |
@@ -93,8 +93,12 @@ AcadPro implements strict Role-Based Access Control (RBAC) across three distinct
 ## ⚡ Core Workflows
 
 ### 1. Student Signup and Authentication
-- Students enter their MIS number and email. The approved roster supplies their department and semester.
-- The student sets a password after opening a 15-minute activation link sent to the roster address.
+
+- Select Student or Faculty on the login page, then create the corresponding account. Both roles enter a name, department and email. Students also enter their MIS and current semester. The verification email opens a 15-minute link where the mailbox owner sets the password. The API creates the account only after successful verification.
+- Students enter their own email, MIS, department and semester. A one-time email link verifies the address and lets them choose a password.
+- Configure the single admin identity with `ADMIN_EMAIL` and `ADMIN_PASSWORD` in the backend environment. Restart the API to apply a credential change. Admin login bypasses email signup and recovery.
+- At startup the API reports the effective database, browser origin, port and mail provider. Use the browser response's `X-Request-ID` to find its `account_mail` event. A sent event indicates provider acceptance. Use its message ID in the provider dashboard to investigate inbox delivery.
+- Before setting `VERIFY_ROLES`, run `node scripts/rollout_accounts.js ROLE` from Backend for each role, review the reported counts, and confirm legacy accounts in reviewed batches.
 - Students sign in using their MIS number or email. Browser sessions expire after eight hours and password recovery revokes prior sessions.
 
 ### 2. Faculty Course Requests and Administrative Approval
@@ -272,7 +276,7 @@ Create a `.env` file inside the `Backend/` directory:
 cd Backend
 ```
 
-Use [Backend/.env.example](Backend/.env.example) as the template. Set the development MongoDB replica-set URI and a session secret. Configure the email provider and sender to exercise delivery outside the synthetic demo. See [Student activation pilot](Backend/STUDENT_ACTIVATION.md) for roster import and verification rollout.
+Use [Backend/.env.example](Backend/.env.example) as the template. Set the development MongoDB replica-set URI and a session secret. Configure the email provider and sender to exercise delivery outside the synthetic demo. See [Student activation pilot](Backend/STUDENT_ACTIVATION.md) for signup and verification.
 
 ### 3. Install Backend Dependencies & Start Server
 ```bash
@@ -378,7 +382,7 @@ AcadPro utilizes **14 collections** in MongoDB Atlas:
 
 ## 🧪 Automated Verification & Test Suites
 
-`npm --prefix Backend test` creates a disposable MongoDB replica set for activation, academic workflows, legacy scripts, and a cold database restore check. Set `MONGOD_BIN` if needed. `npm --prefix Backend run test:unit` runs the account and roster unit tests without MongoDB. The Portal checks workflow runs the backend suite and frontend build in CI.
+`npm --prefix Backend test` creates a disposable MongoDB replica set for activation, academic workflows, legacy scripts, and a cold database restore check. Set `MONGOD_BIN` if needed. `npm --prefix Backend run test:unit` runs the account unit tests without MongoDB. The Portal checks workflow runs the backend suite and frontend build in CI.
 
 ### 1. Comprehensive Academic Workflow Suite
 Tests 14 cross-module scenarios including faculty request submission, transactional approval, catalog integrity, student dashboard availability, 409 duplicate rejection, approval idempotency, request rejection, cohort promotion, historical roster retention, and simulated transaction failure rollback.
@@ -420,7 +424,7 @@ node scripts/inspect_db.js
 - **Solution:** Verify the backend is listening on port 10000. Check `VITE_API_BASE_URL` in `Frontend/.env`.
 
 ### 4. Student activation email
-- Use the email address and MIS from the approved roster. Any email domain is accepted.
+- Enter your email address and MIS. Any email domain is accepted.
 
 ### 5. Video File Size Rejection (`Video file size exceeds maximum allowed limit`)
 - **Cause:** The uploaded video exceeds the 500MB limit.

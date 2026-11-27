@@ -26,7 +26,7 @@ export default function App() {
       <Routes location={location} key={location.pathname}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/account/:purpose" element={<AccountLinkPage />} />
-        <Route path="/activate" element={<SignupPage activation />} />
+        <Route path="/activate" element={<Navigate to="/signup" replace />} />
         <Route path="/signup" element={<SignupPage />} />
 
         <Route

@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Shield,
-  Key,
   Calendar,
   CheckCircle2,
   X,
@@ -19,7 +18,6 @@ import AppLayout from "../components/layout/AppLayout";
 import {
   getAdminProfile,
   updateAdminProfile,
-  changeAdminPassword,
   getSecurityLogs,
   updateAcademicSession,
 } from "../api/admin";
@@ -55,7 +53,6 @@ export default function AdminProfilePage() {
 
   // Modals & form state
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
@@ -66,12 +63,6 @@ export default function AdminProfilePage() {
   const [editAvatar, setEditAvatar] = useState("");
   const [editError, setEditError] = useState("");
 
-  // Password Form state
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [passwordSuccess, setPasswordSuccess] = useState("");
 
   // Session Form state
   const [sessionYear, setSessionYear] = useState(ACTIVE_ACADEMIC_YEAR);
@@ -110,14 +101,6 @@ export default function AdminProfilePage() {
     setShowEditModal(true);
   };
 
-  const openPasswordModal = () => {
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setPasswordError("");
-    setPasswordSuccess("");
-    setShowPasswordModal(true);
-  };
 
   const openSessionModal = () => {
     setSessionYear(profileQuery.data?.currentSession?.academicYear || ACTIVE_ACADEMIC_YEAR);
@@ -140,20 +123,6 @@ export default function AdminProfilePage() {
     onError: (err) => setEditError(getErrorMessage(err)),
   });
 
-  const changePasswordMutation = useMutation({
-    mutationFn: (payload) => changeAdminPassword(payload),
-    onSuccess: () => {
-      setPasswordSuccess("Admin master password changed successfully.");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setTimeout(() => {
-        setShowPasswordModal(false);
-        setPasswordSuccess("");
-      }, 2000);
-    },
-    onError: (err) => setPasswordError(getErrorMessage(err)),
-  });
 
   const updateSessionMutation = useMutation({
     mutationFn: (payload) => updateAcademicSession(payload),
@@ -182,26 +151,6 @@ export default function AdminProfilePage() {
     });
   };
 
-  const handleSavePassword = (e) => {
-    e.preventDefault();
-    setPasswordError("");
-    setPasswordSuccess("");
-
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      setPasswordError("All password fields are required.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError("New passwords do not match.");
-      return;
-    }
-    if (newPassword.length < 6) {
-      setPasswordError("Password must be at least 6 characters long.");
-      return;
-    }
-
-    changePasswordMutation.mutate({ currentPassword, newPassword });
-  };
 
   const handleSaveSession = (e) => {
     e.preventDefault();
@@ -298,13 +247,6 @@ export default function AdminProfilePage() {
                 <span>Edit Profile</span>
               </button>
 
-              <button
-                onClick={openPasswordModal}
-                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-[#FF3D9A]/15 hover:bg-[#FF3D9A]/25 text-[#FF3D9A] border border-[#FF3D9A]/30 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
-              >
-                <Key className="w-3.5 h-3.5" />
-                <span>Change Password</span>
-              </button>
 
               <button
                 onClick={openSessionModal}
@@ -538,107 +480,6 @@ export default function AdminProfilePage() {
                       className="px-5 py-2 rounded-xl text-xs font-bold bg-[#75D7FF] hover:bg-[#A8E7FF] text-[#08090D] shadow-md shadow-[#75D7FF]/20"
                     >
                       {updateProfileMutation.isPending ? "Saving..." : "Save Identity"}
-                    </button>
-                  </div>
-                </form>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* ============================================================== */}
-        {/* CHANGE PASSWORD MODAL */}
-        {/* ============================================================== */}
-        <AnimatePresence>
-          {showPasswordModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-              <div
-                className="fixed inset-0 bg-[#08090D]/80 backdrop-blur-sm transition-opacity"
-                onClick={() => setShowPasswordModal(false)}
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 15 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                className="relative w-full max-w-md bg-[#11141B] border border-[#292F3B] rounded-2xl shadow-2xl p-6 z-10 text-[#F5F3EF] space-y-4"
-              >
-                <div className="flex items-center justify-between pb-3 border-b border-[#292F3B]">
-                  <h4 className="text-base font-bold text-[#F5F3EF]">
-                    Rotate Administrator Password
-                  </h4>
-                  <button onClick={() => setShowPasswordModal(false)} className="p-1 text-[#A4ADBA] hover:text-white">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {passwordError && (
-                  <div className="p-3 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/30 text-[#FDA4AF] text-xs">
-                    {passwordError}
-                  </div>
-                )}
-                {passwordSuccess && (
-                  <div className="p-3 rounded-xl bg-[#10B981]/15 border border-[#10B981]/30 text-[#6EE7B7] text-xs flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                    <span>{passwordSuccess}</span>
-                  </div>
-                )}
-
-                <form onSubmit={handleSavePassword} className="space-y-3.5">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">
-                      Current Password
-                    </label>
-                    <input
-                      type="password"
-                      required
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">
-                      New Cryptographic Password
-                    </label>
-                    <input
-                      type="password"
-                      required
-                      placeholder="Min 6 characters"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-[#A4ADBA] mb-1">
-                      Confirm New Password
-                    </label>
-                    <input
-                      type="password"
-                      required
-                      placeholder="Repeat new password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#191E28] border border-[#292F3B] text-xs text-[#F5F3EF] focus:outline-none focus:border-[#75D7FF]"
-                    />
-                  </div>
-
-                  <div className="flex justify-end gap-3 pt-3 border-t border-[#292F3B]">
-                    <button
-                      type="button"
-                      onClick={() => setShowPasswordModal(false)}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold text-[#A4ADBA] hover:text-[#F5F3EF]"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={changePasswordMutation.isPending}
-                      className="px-5 py-2 rounded-xl text-xs font-bold bg-[#FF3D9A] hover:bg-[#FF66AE] text-white shadow-md shadow-[#FF3D9A]/20"
-                    >
-                      {changePasswordMutation.isPending ? "Updating..." : "Commit Password"}
                     </button>
                   </div>
                 </form>

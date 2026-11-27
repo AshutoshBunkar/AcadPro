@@ -28,13 +28,13 @@ const TABS = [
 ];
 
 export default function LoginPage() {
-  const [tab, setTab] = useState(ROLES.STUDENT);
+  const location = useLocation();
+  const [tab, setTab] = useState(new URLSearchParams(location.search).get("role") === "faculty" ? ROLES.FACULTY : ROLES.STUDENT);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
-  const location = useLocation();
   const { login } = useAuth();
 
   const activeTab = TABS.find((t) => t.value === tab);
@@ -100,7 +100,7 @@ export default function LoginPage() {
               const isSelected = tab === t.value;
               return (
                 <button
-                  key={t.value}
+                  disabled={mutation.isPending} key={t.value}
                   type="button"
                   onClick={() => handleTabChange(t.value)}
                   className={`flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-semibold transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#75D7FF] ${
@@ -130,8 +130,8 @@ export default function LoginPage() {
                   required
                   placeholder={
                     tab === ROLES.STUDENT
-                      ? "rollnumber@iiitp.ac.in"
-                      : "username@acadpro.edu"
+                      ? "Email or MIS"
+                      : "you@example.com"
                   }
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -200,25 +200,25 @@ export default function LoginPage() {
             </button>
 
             {/* Student Registration Link */}
-            {tab === ROLES.STUDENT && (
+            {tab !== ROLES.ADMIN && (
               <div className="pt-2 text-center">
                 <p className="text-xs text-[#A4ADBA]">
                   New to AcadPro?{" "}
                   <RouterLink
-                    to="/signup"
+                    to={`/signup?role=${tab}`}
                     className="font-semibold text-[#75D7FF] hover:text-[#A8E7FF] hover:underline transition-colors"
                   >
-                    Create student account
+                    Create a {tab} account
                   </RouterLink>
                 </p>
               </div>
             )}
 
-            <nav aria-label="Account help" className="flex flex-wrap justify-center gap-3 text-xs text-[#75D7FF]">
+            {tab !== ROLES.ADMIN && <nav aria-label="Account help" className="flex flex-wrap justify-center gap-3 text-xs text-[#75D7FF]">
               <RouterLink to="/account/reset">Forgot password?</RouterLink>
               <RouterLink to="/account/confirm">Verify existing account</RouterLink>
               {tab === ROLES.FACULTY && <RouterLink to="/account/invite">Resend invitation</RouterLink>}
-            </nav>
+            </nav>}
             <div className="pt-4 mt-4 border-t border-[#292F3B] text-center">
               <span className="inline-flex items-center gap-1.5 text-[11px] text-[#A4ADBA]/80">
                 <Sparkles className="w-3 h-3 text-[#FF3D9A]" />

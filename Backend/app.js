@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: "./Backend/.env" });
 dotenv.config();
 import express from "express";
+import { randomUUID } from "node:crypto";
 
 
 import accountRoutes from "./routes/accountRoutes.js";
@@ -26,7 +27,12 @@ import cors from "cors";
 const app = express();
 
 app.set("trust proxy", Number(process.env.TRUST_PROXY_HOPS || 0));
-app.use(cors({ origin: publicOrigin(), credentials: true }));
+app.use((req, res, next) => {
+  req.requestId = randomUUID();
+  res.set("X-Request-ID", req.requestId);
+  next();
+});
+app.use(cors({ origin: publicOrigin(), credentials: true, exposedHeaders: ["X-Request-ID"] }));
 app.use(cookieParser());
 app.use(protectBrowserWrites);
 

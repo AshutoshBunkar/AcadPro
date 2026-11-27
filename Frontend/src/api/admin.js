@@ -3,7 +3,6 @@ import api from "./axios";
 // Admin Profile & Master Credentials
 export const getAdminProfile = () => api.get("/admin/profile");
 export const updateAdminProfile = (payload) => api.put("/admin/profile", payload);
-export const changeAdminPassword = (payload) => api.put("/admin/change-password", payload);
 
 // Audit & Monitoring
 export const getSecurityLogs = () => api.get("/admin/security-logs");

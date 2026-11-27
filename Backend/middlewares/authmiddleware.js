@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { requireVerified } from "../utils/accountAccess.js";
+import { fixedAdminEmail } from "../utils/fixedAdmin.js";
 import jwt from "jsonwebtoken";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -37,7 +38,7 @@ const verifyJWT = asyncHandler(async (req, res, next) => {
 
   const user = await Model.findById(decoded.id).select("-password");
 
-  if (!user) {
+  if (!user || (decoded.role === "admin" && user.email.toLowerCase() !== fixedAdminEmail())) {
     throw new ApiError(401, "User not found for this token");
   }
 

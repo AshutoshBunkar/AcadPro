@@ -1,6 +1,17 @@
 # AcadPro account access and email delivery
 
-Investigation date **27 November 2026**. Scope covers the local development portal, its configured Atlas database, and its outbound account emails. This is a proposed repair plan.
+Investigation date **27 November 2026**. Scope covers the local development portal, its configured Atlas database, and its outbound account emails. The investigation below records the pre-fix state.
+
+Students now register directly at /signup and verify their email. The earlier roster rollout described below has been retired.
+
+## Implementation status · 27 November 2026
+
+- Implemented credential-free startup diagnostics and request IDs. Mail events distinguish ineligible requests, cooldown, provider acceptance, rejection and network failure. SendGrid message IDs are recorded when supplied.
+- Implemented operator-only first-admin bootstrap and an admin dashboard roster form. Students activate using the approved email and MIS. Operator setup and student onboarding are documented in the README.
+- Updated login, activation, invitation, email change and recovery screens, including missing-link and resend guidance.
+- Isolated both mail providers in the automated fixture. Added tests for provider errors, correlation, duplicate roster submissions, access control and reset-link reuse.
+- Live setup: the first admin exists and awaits email confirmation. The approved student already had a pending roster record. No duplicate was added. The read-only directory review found no unverified student or faculty accounts. Verification enforcement is pending a live confirmation test.
+- Verification limits: the frontend production build succeeded. The disposable replica workflow could not connect to local MongoDB in this runtime (EACCES). The app's direct Atlas connection timed out and SendGrid DNS resolution failed here. Live email delivery, browser-to-API operation and the full transaction suite still need a connected run.
 
 ## What is blocking testing today
 

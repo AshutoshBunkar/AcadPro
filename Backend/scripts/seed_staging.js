@@ -16,5 +16,5 @@ try {
     }
   }
   await seedFixture(process.env.STAGING_DEMO_PASSWORD);
-  console.log("Synthetic staging roster and two course offerings created.");
+  console.log("Synthetic staging accounts and two course offerings created.");
 } finally { await mongoose.disconnect(); }

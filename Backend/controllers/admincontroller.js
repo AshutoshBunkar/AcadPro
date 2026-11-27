@@ -7,6 +7,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { deliverSession } from "../utils/browserSession.js";
+import { fixedAdminEmail } from "../utils/fixedAdmin.js";
 import { sessionToken } from "../utils/accountAccess.js";
 import { Admin } from "../models/Admin.js";
 import { Faculty } from "../models/Faculty.js";
@@ -70,7 +71,8 @@ const loginAdmin = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Password and email are required");
   }
 
-  const admin = await Admin.findOne({ email });
+  if (typeof email !== "string" || email.trim().toLowerCase() !== fixedAdminEmail()) throw new ApiError(401, "Invalid admin credentials");
+  const admin = await Admin.findOne({ email: fixedAdminEmail() }).collation({ locale: "en", strength: 2 });
 
   if (!admin) {
     throw new ApiError(404, "Admin does not exist");
@@ -243,60 +245,6 @@ const updateAdminProfile = asyncHandler(async (req, res) => {
   );
 });
 
-// Change Admin Master Password
-const changeAdminPassword = asyncHandler(async (req, res) => {
-  const adminId = req.user.id;
-  const { currentPassword, newPassword } = req.body;
-
-  if (!currentPassword || !newPassword) {
-    throw new ApiError(400, "Current password and new password are required");
-  }
-
-  if (newPassword.length < 6) {
-    throw new ApiError(400, "New password must be at least 6 characters long");
-  }
-
-  const admin = await Admin.findById(adminId);
-  if (!admin) {
-    throw new ApiError(404, "Admin not found");
-  }
-
-  const isPasswordValid = await admin.isPasswordCorrect(currentPassword);
-  if (!isPasswordValid) {
-    await recordAuditLog({
-      action: "PASSWORD_CHANGE_FAILED",
-      category: "AUTH",
-      details: `Failed password change attempt on admin account ${admin.email}`,
-      actor: admin.name || "System Admin",
-      actorEmail: admin.email,
-      ipAddress: req.ip || "127.0.0.1",
-      severity: "WARNING",
-      status: "FAILED",
-    });
-    throw new ApiError(401, "Current password is incorrect");
-  }
-
-  admin.sessionVersion = (admin.sessionVersion || 0) + 1;
-
-  admin.password = newPassword;
-  await admin.save();
-
-  await recordAuditLog({
-    action: "PASSWORD_CHANGED",
-    category: "AUTH",
-    details: `Master security credentials successfully updated for admin account ${admin.email}`,
-    actor: admin.name || "System Admin",
-    actorEmail: admin.email,
-    ipAddress: req.ip || "127.0.0.1",
-    severity: "CRITICAL",
-    status: "SUCCESS",
-  });
-
-  return res.status(200).json(
-    new ApiResponse(200, null, "Admin password updated successfully")
-  );
-});
-
 // Get Security Audit Logs
 const getSecurityLogs = asyncHandler(async (req, res) => {
   const logs = await AuditLog.find().sort({ createdAt: -1 }).limit(50);
@@ -408,7 +356,7 @@ const createFaculty = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while registering the Faculty");
   }
 
-  await issueChallenge(facultyUser, "faculty", "invite");
+  await issueChallenge(facultyUser, "faculty", "invite", facultyUser.email, req.requestId);
   const createdFaculty = await Faculty.findById(facultyUser._id).select("-password");
 
   await recordAuditLog({
@@ -1547,7 +1495,7 @@ const updateStudent = asyncHandler(async (req, res) => {
       throw new ApiError(409, "A student with this email address already exists");
     }
     if (!validEmail(normalizedEmail)) throw new ApiError(400, "Invalid email.");
-    await issueChallenge(student, "student", "email", normalizedEmail);
+    await issueChallenge(student, "student", "email", normalizedEmail, req.requestId);
   }
 
   // Check MIS uniqueness if modified
@@ -1633,7 +1581,7 @@ const updateFaculty = asyncHandler(async (req, res) => {
       throw new ApiError(409, "A faculty member with this email address already exists");
     }
     if (!validEmail(normalizedEmail)) throw new ApiError(400, "Invalid email.");
-    await issueChallenge(faculty, "faculty", "email", normalizedEmail);
+    await issueChallenge(faculty, "faculty", "email", normalizedEmail, req.requestId);
   }
 
   if (name !== undefined) faculty.name = name.trim();
@@ -1867,7 +1815,6 @@ export {
   loginAdmin,
   getAdminProfile,
   updateAdminProfile,
-  changeAdminPassword,
   getSecurityLogs,
   getAdminDirectories,
   createFaculty,

@@ -16,13 +16,12 @@ try {
   const { default: app } = await import("../app.js");
   const { AccountChallenge } = await import("../models/AccountChallenge.js");
   const { Student } = await import("../models/Student.js");
-  const { Notification } = await import("../models/Notification.js");
   const { AuditLog } = await import("../models/AuditLog.js");
   const { StudentEnrollment } = await import("../models/StudentEnrollment.js");
   const { TeachingAssignment } = await import("../models/TeachingAssignment.js");
   await mongoose.connect(replica.uri);
   await Promise.all(Object.values(mongoose.models).map(m => m.init()));
-  const { admin, faculty, roster, offerings, password } = await seedFixture();
+  const { admin, faculty, studentDetails: signup, offerings, password } = await seedFixture();
   server = app.listen(0, "127.0.0.1");
   await new Promise(resolve => server.once("listening", resolve));
   const base = "http://127.0.0.1:" + server.address().port;
@@ -40,17 +39,19 @@ try {
     return response.data.data;
   };
   const link = () => new URL(mail.messages.at(-1).url).hash.slice(1);
-  const signup = { email: roster.email, mis: roster.mis };
   const cooldown = () => AccountChallenge.updateMany({}, { sentAt: new Date(0) });
   const resetLimit = () => mongoose.model("ActivationLimit").deleteMany({});
   const adminAuth = (await ok(http("/admin/login", { email: admin.email, password }))).token;
   const facultyAuth = (await ok(http("/faculty/login", { email: faculty.email, password }))).token;
-  await ok(http("/student/signup", { ...signup, mis: "0002" }), 202);
-  assert.equal(mail.messages.length, 0);
-  assert.equal(await Notification.countDocuments({ recipient: admin._id }), 1);
+  // A leftover pre-registration entry must never reserve an email or MIS.
+  await mongoose.connection.collection("studentrosters").insertOne({ email: signup.email, mis: "old-mis" });
   mail.fail = true;
-  await ok(http("/student/signup", signup), 202);
-  assert.equal(await AccountChallenge.countDocuments({ delivery: "failed" }), 1);
+  const activationResponse = await http("/student/signup", signup, null, "POST", {
+    Origin: process.env.PUBLIC_APP_URL, "X-AcadPro-Client": "web"
+  });
+  assert.equal(activationResponse.status, 503);
+  assert.equal(activationResponse.headers.get("access-control-allow-origin"), process.env.PUBLIC_APP_URL);
+  assert.equal(await AccountChallenge.countDocuments({ requestId: activationResponse.headers.get("x-request-id"), delivery: "failed", providerStatus: 503 }), 1);
   mail.fail = false;
   await cooldown();
   await ok(http("/student/signup", signup), 202);
@@ -58,20 +59,21 @@ try {
   await ok(http("/student/signup", signup), 202);
   assert.equal(mail.messages.length, 1);
   await AccountChallenge.updateMany({}, { expiresAt: new Date(0) });
-  await ok(http("/student/activate", { token: first, password }), 400);
+  await ok(http("/account/signup/complete", { token: first, password }), 400);
   await cooldown(); await ok(http("/student/signup", signup), 202);
   const superseded = link();
   await cooldown(); await ok(http("/student/signup", signup), 202);
   const token = link();
-  await ok(http("/student/activate", { token: superseded, password }), 400);
+  await ok(http("/account/signup/complete", { token: superseded, password }), 400);
   await ok(http("/account/reset/complete", { token, password }), 400);
-  const simultaneous = await Promise.all([1,2].map(() => http("/student/activate", { token, password })));
+  const simultaneous = await Promise.all([1,2].map(() => http("/account/signup/complete", { token, password })));
   assert.deepEqual(simultaneous.map(r => r.status).sort(), [201, 400]);
-  await ok(http("/student/activate", { token, password }), 400);
-  const student = await Student.findOne({ mis: roster.mis });
-  const studentAuth = (await ok(http("/student/login", { email: roster.email.toUpperCase(), password }))).token;
-  await ok(http("/student/login", { mis: roster.mis, password }));
-  console.log("PASS activation, ACL mismatch review, delivery failure, expiry, resend, reuse, concurrency and both login identifiers.");
+  await ok(http("/account/signup/complete", { token, password }), 400);
+  const student = await Student.findOne({ mis: signup.mis });
+  assert.equal(await Student.countDocuments({ mis: signup.mis }), 1);
+  const studentAuth = (await ok(http("/student/login", { email: signup.email.toUpperCase(), password }))).token;
+  await ok(http("/student/login", { mis: signup.mis, password }));
+  console.log("PASS activation, delivery failure, expiry, resend, reuse, concurrency and both login identifiers.");
 
   const legacy = await Student.create({ name: "Legacy", email: "legacy@iiitp.ac.in", mis: "0099", department: "CSE",
     year: 1, currentSemester: 1, password: await bcrypt.hash(password, 10) });
@@ -86,18 +88,19 @@ try {
   const inviteToken = link();
   await ok(http("/account/invite/complete", { token: inviteToken, password, role: "admin" }));
   await ok(http("/faculty/login", { email: invited.email, password }));
-  const known = await http("/account/reset/request", { email: admin.email });
+  const known = await http("/account/reset/request", { email: invited.email });
   const unknown = await http("/account/reset/request", { email: "nobody@example.test" });
   assert.deepEqual(known.data, unknown.data);
   await ok(http("/account/reset/complete", { token: link(), password: password + "2" }));
-  await ok(http("/admin/profile", null, adminAuth), 401);
-  const staff = (await ok(http("/admin/login", { email: admin.email, password: password + "2" }))).token;
+  await ok(http("/account/reset/complete", { token: link(), password }), 400);
+  await ok(http("/faculty/login", { email: invited.email, password }), 401);
+  const staff = (await ok(http("/admin/login", { email: admin.email, password }))).token;
   await ok(http("/admin/student/" + student._id, { email: "updated@iiitp.ac.in" }, staff, "PUT"));
-  assert.equal((await Student.findById(student._id)).email, roster.email);
+  assert.equal((await Student.findById(student._id)).email, signup.email);
   await ok(http("/account/email/complete", { token: link() }));
   await ok(http("/student/profile", null, studentAuth), 401);
   const auth = (await ok(http("/student/login", { email: "updated@iiitp.ac.in", password }))).token;
-  console.log("PASS legacy sessions, confirmation, invitation, admin recovery, email replacement and session revocation.");
+  console.log("PASS legacy sessions, confirmation, invitation, faculty recovery, email replacement and session revocation.");
 
   const [initial, next] = offerings;
   const current = await ok(http("/student/current-courses", null, auth));
@@ -149,22 +152,39 @@ try {
   assert.equal((await ok(http("/student/current-courses", null, auth))).courses.length, 0);
   assert.equal((await http(lecture.videoUrl, null, auth)).status, 200);
   await ok(http("/admin/update", { academicYear: "2026-2027", term: "ODD" }, staff, "PUT"));
-  const browser = await http("/student/login", { mis: roster.mis, password }, null, "POST", { "X-AcadPro-Client": "web" });
+  const browser = await http("/student/login", { mis: signup.mis, password }, null, "POST", { "X-AcadPro-Client": "web" });
   assert.equal(browser.data.data.token, undefined);
   const cookie = browser.headers.get("set-cookie");
   assert.match(cookie, /HttpOnly/);
   await ok(http("/account/session", null, null, "GET", { Cookie: cookie.split(";")[0] }));
   assert.equal((await http("/account/logout", {}, null, "POST", { Cookie: cookie.split(";")[0] })).status, 403);
   console.log("PASS request/approval replay, term rollover, cookie session and CSRF checks.");
+  for (const role of ["student", "faculty"]) {
+    await resetLimit();
+    const form = { name: "New user", department: "CSE", email: role + ".new@example.test", mis: "000345", semester: 1, role: "admin" };
+    await ok(http("/" + role + "/signup", form), 202);
+    await ok(http("/" + role + "/login", { email: form.email, password }), 404);
+    const token = link();
+    await ok(http("/account/signup/complete", { token, password }), 201);
+    await ok(http("/account/signup/complete", { token, password }), 400);
+    await ok(http("/" + role + "/login", { email: form.email, password }));
+    await ok(http("/" + role + "/signup", form), 409);
+    if (role === "student") {
+      await ok(http("/student/login", { mis: form.mis, password }));
+      await ok(http("/student/signup", { ...form, email: "different@example.test" }), 409);
+    }
+    await ok(http("/admin/login", { email: form.email, password }), 401);
+  }
+  console.log("PASS self-service student and faculty signup, verification, duplicates and fixed admin identity.");
   const counts = await Promise.all([Student.countDocuments(), StudentEnrollment.countDocuments(), AuditLog.countDocuments()]);
   const indexNames = (await StudentEnrollment.listIndexes()).map(i => i.name).sort();
   await mongoose.disconnect(); await replica.restoreCopy(); await mongoose.connect(replica.uri);
   assert.deepEqual(await Promise.all([Student.countDocuments(), StudentEnrollment.countDocuments(), AuditLog.countDocuments()]), counts);
   assert.deepEqual((await StudentEnrollment.listIndexes()).map(i => i.name).sort(), indexNames);
-  await ok(http("/student/login", { mis: roster.mis, password }));
+  await ok(http("/student/login", { mis: signup.mis, password }));
   console.log("PASS cold backup restored into a separate database directory, with counts, indexes and login verified.");
   const backend = fileURLToPath(new URL("../", import.meta.url));
-  for (const script of ["test_student_roster.mjs", "test_api_endpoints.js", "test_subject_request_flow.js", "test_notification_api.js", "test_academic_workflows.js"]) {
+  for (const script of ["test_api_endpoints.js", "test_subject_request_flow.js", "test_notification_api.js", "test_academic_workflows.js"]) {
     await new Promise((resolve, reject) => {
       const child = spawn(process.execPath, [path.join("scripts", script)], { cwd: backend, windowsHide: true,
         env: { ...process.env, TEST_API_BASE: base, VERIFY_ROLES: "" }, stdio: ["ignore", "pipe", "pipe"] });

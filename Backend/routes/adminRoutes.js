@@ -5,7 +5,6 @@ import {
   loginAdmin,
   getAdminProfile,
   updateAdminProfile,
-  changeAdminPassword,
   getSecurityLogs,
   getAdminDirectories,
   createFaculty,
@@ -45,7 +44,6 @@ Router.post("/login", loginAdmin);
 // Admin Profile & System Management
 Router.get("/profile", verifyJWT, authorize("admin"), getAdminProfile);
 Router.put("/profile", verifyJWT, authorize("admin"), updateAdminProfile);
-Router.put("/change-password", verifyJWT, authorize("admin"), changeAdminPassword);
 Router.get("/security-logs", verifyJWT, authorize("admin"), getSecurityLogs);
 Router.get("/directories", verifyJWT, authorize("admin"), getAdminDirectories);
 
