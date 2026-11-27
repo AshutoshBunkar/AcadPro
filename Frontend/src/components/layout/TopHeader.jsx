@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Menu,
   Bell,
+  Moon,
+  Sun,
   User,
   LogOut,
   ChevronDown,
@@ -30,6 +32,8 @@ import {
 import { getErrorMessage } from "../../api/axios";
 
 export default function TopHeader({
+  darkMode,
+  onToggleTheme,
   setMobileOpen,
   title,
   subtitle,
@@ -246,6 +250,13 @@ export default function TopHeader({
 
         {/* Right Side: Campus Badge + Notifications + User Menu */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {role === ROLES.ADMIN && (
+            <button type="button" onClick={onToggleTheme} aria-label="Dark mode"
+              aria-pressed={darkMode} title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+              className="grid h-11 w-11 place-items-center rounded-xl text-nav-accent hover:bg-nav-subtle focus-visible:ring-2 focus-visible:ring-nav-accent">
+              {darkMode ? <Sun size={20} aria-hidden="true" /> : <Moon size={20} aria-hidden="true" />}
+            </button>
+          )}
           {/* Notification Bell */}
           <div className="relative" ref={notifRef}>
             <button

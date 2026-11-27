@@ -18,10 +18,10 @@ export default function AcademicSessionForm({ currentSession, onCancel, onSaved,
       onSaved?.();
     },
   });
-  const fieldClass = "mt-1 block w-full px-3 py-2 rounded-xl bg-[#F2F5F2] border border-[#C9D4CE] text-[#192D2A]";
+  const fieldClass = "mt-1 block w-full px-3 py-2 rounded-xl bg-nav-subtle border border-nav-line text-nav-ink";
 
   return (
-    <form className="space-y-4 text-xs text-[#526460]" onSubmit={(event) => {
+    <form className="space-y-4 text-xs text-nav-muted" onSubmit={(event) => {
       event.preventDefault();
       mutation.mutate({ academicYear, term });
     }}>
@@ -37,11 +37,11 @@ export default function AcademicSessionForm({ currentSession, onCancel, onSaved,
         </select>
       </label>
       <p>This sets the active academic year and teaching term for the whole institution.</p>
-      {mutation.isError && <p role="alert" className="text-[#993F37]">{getErrorMessage(mutation.error)}</p>}
-      <div className="flex justify-end gap-3 pt-3 border-t border-[#C9D4CE]">
+      {mutation.isError && <p role="alert" className="text-nav-danger-ink">{getErrorMessage(mutation.error)}</p>}
+      <div className="flex justify-end gap-3 pt-3 border-t border-nav-line">
         <button type="button" onClick={onCancel} className="px-4 py-2 font-semibold">Cancel</button>
         <button type="submit" disabled={mutation.isPending}
-          className="px-5 py-2 rounded-xl font-bold bg-[#00695E] text-[#F7F6F1] disabled:opacity-50">
+          className="px-5 py-2 rounded-xl font-bold bg-nav-accent text-nav-canvas disabled:opacity-50">
           {mutation.isPending ? "Saving..." : submitLabel}
         </button>
       </div>

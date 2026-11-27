@@ -10,6 +10,8 @@ module.exports = {
               "nav-footer": "rgb(var(--nav-footer, 14 17 23) / <alpha-value>)",
               "nav-row": "rgb(var(--nav-row, 20 24 32) / <alpha-value>)",
               "nav-line": "rgb(var(--nav-line, 41 47 59) / <alpha-value>)",
+              "nav-accent-hover": "rgb(var(--nav-accent-hover) / <alpha-value>)",
+              "nav-warning": "rgb(var(--nav-warning) / <alpha-value>)",
               "nav-accent": "rgb(var(--nav-accent, 117 215 255) / <alpha-value>)",
               "nav-highlight": "rgb(var(--nav-highlight, 255 61 154) / <alpha-value>)",
               "nav-muted": "rgb(var(--nav-muted, 164 173 186) / <alpha-value>)",

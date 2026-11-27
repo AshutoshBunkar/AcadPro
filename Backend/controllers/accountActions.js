@@ -77,8 +77,8 @@ export async function finishChallenge(req, res) {
   const { token, password } = req.body ?? {};
   if (typeof token !== "string" || !/^[a-f0-9]{64}$/.test(token)) throw invalid();
   const choosesPassword = ["signup", "reset", "invite"].includes(purpose);
-  if (choosesPassword && (typeof password !== "string" || password.length < 12 || Buffer.byteLength(password) > 72)) {
-    throw new ApiError(400, "Use at least 12 characters and at most 72 UTF-8 bytes.");
+  if (choosesPassword && (typeof password !== "string" || password.length < 6 || Buffer.byteLength(password) > 72)) {
+    throw new ApiError(400, "Use at least 6 characters and at most 72 UTF-8 bytes.");
   }
   const role = await mongoose.connection.transaction(async session => {
     const now = new Date();

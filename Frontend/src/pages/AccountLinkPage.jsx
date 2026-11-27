@@ -31,8 +31,8 @@ function AccountForm({ purpose, token }) {
       }}>
         {!token && purpose !== "email" && <label className="block">Email
           <input className="block w-full p-2 bg-[#191E28]" required type="email" name="email" autoComplete="email" /></label>}
-        {needsPassword && <label className="block">New password (12 characters minimum)
-          <input className="block w-full p-2 bg-[#191E28]" required type="password" name="password" minLength={12} autoComplete="new-password" /></label>}
+        {needsPassword && <label className="block">New password (6 characters minimum)
+          <input className="block w-full p-2 bg-[#191E28]" required type="password" name="password" minLength={6} autoComplete="new-password" /></label>}
         {(token || purpose !== "email") && <button className="bg-[#75D7FF] text-black rounded px-4 py-2" disabled={operation.isPending}>
           {operation.isPending ? "Please wait…" : token ? "Confirm" : "Send my link"}</button>}
       </form>}

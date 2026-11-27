@@ -6,8 +6,8 @@ export const fixedAdminEmail = () => process.env.ADMIN_EMAIL?.trim().toLowerCase
 export async function configureAdmin() {
   const email = fixedAdminEmail();
   const password = process.env.ADMIN_PASSWORD;
-  if (!validEmail(email) || !password || password.length < 12 || Buffer.byteLength(password) > 72) {
-    throw new Error("Set ADMIN_EMAIL and a 12-character minimum ADMIN_PASSWORD (72 bytes maximum).");
+  if (!validEmail(email) || !password || password.length < 6 || Buffer.byteLength(password) > 72) {
+    throw new Error("Set ADMIN_EMAIL and a 6-character minimum ADMIN_PASSWORD (72 bytes maximum).");
   }
   const filter = { email };
   let admin = await Admin.findOne(filter).collation({ locale: "en", strength: 2 });

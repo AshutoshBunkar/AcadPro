@@ -178,7 +178,9 @@ test("new students and faculty verify their mailbox before an account is created
     assert.equal(mail.to, "new@example.org");
     const url = new URL(mail.url);
     assert.equal(url.pathname, "/account/signup");
-    const complete = { params: { purpose: "signup" }, body: { token: url.hash.slice(1), password: "test-password-42" } };
+    const complete = { params: { purpose: "signup" }, body: { token: url.hash.slice(1), password: "abcde" } };
+    await assert.rejects(finishChallenge(complete, res), /at least 6 characters/);
+    complete.body.password = "abcdef";
     await finishChallenge(complete, res);
     assert.equal(res.code, 201);
     assert.equal(res.value.role, role);
@@ -207,7 +209,9 @@ test("the fixed admin is provisioned once and rotating its configured password r
     }
   });
   process.env.ADMIN_EMAIL = "Fixed@example.org";
-  process.env.ADMIN_PASSWORD = "a-testing-secret-42";
+  process.env.ADMIN_PASSWORD = "abcde";
+  await assert.rejects(configureAdmin(), /6-character minimum/);
+  process.env.ADMIN_PASSWORD = "abcdef";
   let account;
   t.mock.method(Admin, "findOne", () => ({ collation: async () => account }));
   const create = t.mock.method(Admin, "create", async fields => {

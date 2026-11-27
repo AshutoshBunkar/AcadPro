@@ -7,6 +7,22 @@ import PageTransition from "./PageTransition";
 
 export default function AppLayout({ children, title, subtitle, fullWidth = false }) {
   const { role } = useAuth();
+  const [darkMode, setDarkMode] = useState(() => {
+    try {
+      return localStorage.getItem("acadpro_admin_theme") === "dark";
+    } catch {
+      return false;
+    }
+  });
+  const toggleTheme = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    try {
+      localStorage.setItem("acadpro_admin_theme", next ? "dark" : "light");
+    } catch {
+      // The current page can still switch when browser storage is unavailable.
+    }
+  };
   // Persist sidebar collapsed state
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -27,7 +43,7 @@ export default function AppLayout({ children, title, subtitle, fullWidth = false
   }, [collapsed]);
 
   return (
-    <div data-navigation-role={role} className="min-h-screen bg-[#08090D] text-[#F5F3EF] flex flex-col selection:bg-[#75D7FF]/20 selection:text-[#75D7FF]">
+    <div data-navigation-role={role} data-theme={darkMode ? "dark" : "light"} className="min-h-screen bg-[#08090D] text-[#F5F3EF] flex flex-col selection:bg-[#75D7FF]/20 selection:text-[#75D7FF]">
       {/* Unified Sidebar Navigation */}
       <Sidebar
         collapsed={collapsed}
@@ -44,6 +60,8 @@ export default function AppLayout({ children, title, subtitle, fullWidth = false
       >
         {/* Sticky Header */}
         <TopHeader
+          darkMode={darkMode}
+          onToggleTheme={toggleTheme}
           setMobileOpen={setMobileOpen}
           title={title}
           subtitle={subtitle}

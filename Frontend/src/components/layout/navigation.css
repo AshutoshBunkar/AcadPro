@@ -1,4 +1,8 @@
 [data-navigation-role="admin"] {
+  --admin-scheme: light;
+  --nav-accent-hover: 0 85 77;
+  --nav-warning: 137 84 10;
+  --admin-control: 119 136 130;
   --nav-canvas: 247 246 241;
   --nav-surface: 255 255 255;
   --nav-subtle: 237 243 239;
@@ -17,12 +21,33 @@
 
 [data-navigation-role="admin"] .portal-nav {
   font-family: "DM Sans", system-ui, sans-serif;
-  color-scheme: light;
+  color-scheme: var(--admin-scheme);
 }
 [data-navigation-role="admin"] .portal-nav .font-display {
   font-family: Spectral, Georgia, serif;
 }
 [data-navigation-role="admin"] .portal-nav :focus-visible {
-  outline: 2px solid #00695e;
+  outline: 2px solid rgb(var(--nav-accent));
   outline-offset: 2px;
+}
+
+[data-navigation-role="admin"][data-theme="dark"] {
+  --admin-scheme: dark;
+  --nav-canvas: 15 23 23;
+  --nav-surface: 24 35 35;
+  --nav-subtle: 34 48 47;
+  --nav-footer: 20 30 30;
+  --nav-row: 29 42 41;
+  --nav-line: 64 84 80;
+  --nav-accent: 111 224 200;
+  --nav-accent-hover: 149 239 219;
+  --nav-highlight: 111 224 200;
+  --nav-ink: 234 244 241;
+  --nav-muted: 176 197 190;
+  --nav-danger: 251 137 143;
+  --nav-danger-ink: 255 177 180;
+  --nav-success: 122 218 164;
+  --nav-success-ink: 160 232 190;
+  --nav-warning: 246 192 101;
+  --admin-control: 124 148 141;
 }
